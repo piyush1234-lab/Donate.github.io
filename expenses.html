@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expense Planner | GiftBloom</title>
+<link rel="stylesheet" href="expenses.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="hearts"></div>
+
+<header>
+<nav class="navbar">
+<div class="logo">💝 GiftBloom</div>
+<div class="menu-btn" id="menuBtn">☰</div>
+<ul id="menu">
+<li><a href="index.html">Home</a></li>
+<li><a href="campaigns.html">Campaigns</a></li>
+<li><a href="dashboard.html">Dashboard</a></li>
+<li><a class="signup" href="create.html">New Campaign</a></li>
+</ul>
+</nav>
+</header>
+
+<section class="expense-page">
+<div class="glass expense-box">
+<button class="back-btn">← Back</button>
+<h1>💸 Expense Planner</h1>
+<p class="subtitle">Add all expected expenses for this campaign.</p>
+
+<!-- Campaign Summary -->
+<div class="summary-card">
+<h2>Campaign Summary</h2>
+<div class="summary-grid">
+<div>
+<p>🎁 Gift</p>
+<h3 id="giftName">Loading...</h3>
+</div>
+<div>
+<p>❤️ Receiver</p>
+<h3 id="receiver">Loading...</h3>
+</div>
+<div>
+<p>🎯 Target</p>
+<h3>₹<span id="targetAmount">0</span></h3>
+</div>
+</div>
+</div>
+
+<!-- Expense List -->
+<div class="expense-list">
+<h2>Expense Items</h2>
+
+<!-- NEW: Multi Expense Toggle -->
+<div class="glass" style="padding: 20px; border-radius: 18px; margin-bottom: 20px;">
+    <label style="margin-top: 0;">Do you have multiple expenses?</label>
+    <div class="radio-group" style="margin-bottom: 5px;">
+        <label class="radio-label"><input type="radio" name="multiExpense" value="no" checked> No</label>
+        <label class="radio-label"><input type="radio" name="multiExpense" value="yes"> Yes</label>
+    </div>
+
+    <div id="expenseCountContainer" style="display:none; margin-top: 15px;">
+        <label>How many expenses?</label>
+        <select id="expenseCount" class="expense-dropdown">
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+        </select>
+    </div>
+</div>
+
+<div id="expenseContainer">
+    <!-- JS Injects Rows Here -->
+</div>
+
+<!-- Hidden because count is managed by Dropdown/Auto-Add now -->
+<button id="addExpense" class="add-btn" style="display:none;">＋ Add Expense</button>
+</div>
+
+<!-- Summary -->
+<div class="total-card">
+<h2>Expense Summary</h2>
+<div class="total-row">
+<span>Target Amount</span>
+<strong>₹<span id="target">0</span></strong>
+</div>
+<div class="total-row">
+<span>Total Expenses</span>
+<strong>₹<span id="totalExpense">0</span></strong>
+</div>
+<div class="total-row">
+<span>Remaining</span>
+<strong>₹<span id="remaining">0</span></strong>
+</div>
+<div class="progress">
+<div id="progressFill" class="fill"></div>
+</div>
+<p id="warning" class="warning"></p>
+</div>
+
+<button id="continueBtn" class="primary" disabled>Continue →</button>
+
+</div>
+</section>
+
+<script src="expenses.js"></script>
+</body>
+</html>

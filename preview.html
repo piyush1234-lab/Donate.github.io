@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preview Campaign | GiftBloom</title>
+<link rel="stylesheet" href="preview.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="hearts"></div>
+
+<header>
+<nav class="navbar">
+<div class="logo">💝 GiftBloom</div>
+<div class="menu-btn" id="menuBtn">☰</div>
+<ul id="menu">
+<li><a href="index.html">Home</a></li>
+<li><a href="campaigns.html">Campaigns</a></li>
+<li><a href="dashboard.html">Dashboard</a></li>
+<li><a class="signup" href="create.html">New Campaign</a></li>
+</ul>
+</nav>
+</header>
+
+<section class="preview-page">
+<div class="glass preview-box">
+<button class="back-btn">← Back</button>
+<h1>📋 Campaign Preview</h1>
+<p class="subtitle">Review everything before publishing.</p>
+
+<!-- =========================
+Campaign Information
+========================= -->
+<div class="section">
+<h2>🎁 Campaign Details</h2>
+<div class="preview-grid">
+<div class="image-box">
+<img id="giftPreview" src="" alt="Gift">
+</div>
+<div class="info">
+<h3 id="giftName">Loading...</h3>
+<p>❤️ For <span id="receiver">Loading...</span></p>
+<p>👤 By <span id="creator">Loading...</span></p>
+<p>🎉 <span id="occasion">Loading...</span></p>
+<p>🏷 <span id="category">Loading...</span></p>
+<p>🎯 ₹<span id="target">0</span></p>
+<p>📅 <span id="date">--</span></p>
+</div>
+</div>
+</div>
+
+<!-- =========================
+Story
+========================= -->
+<div class="section">
+<h2>📖 Campaign Story</h2>
+<p id="story">Loading...</p>
+</div>
+
+<!-- =========================
+Expenses
+========================= -->
+<div class="section">
+<h2>💸 Expense Summary</h2>
+<div id="expenseTable"></div>
+<div class="summary">
+<div>Target <strong>₹<span id="targetAmount">0</span></strong></div>
+<div>Expense <strong>₹<span id="expenseTotal">0</span></strong></div>
+<div>Remaining <strong>₹<span id="remaining">0</span></strong></div>
+</div>
+<div class="progress">
+<div id="progressFill" class="fill"></div>
+</div>
+</div>
+
+<!-- =========================
+QR & UPI Verification
+========================= -->
+<div class="section" id="qrSection">
+<h2>📷 Payment QR & UPI</h2>
+<img id="qrPreview" class="qr-image" src="" alt="QR">
+<p id="qrDeletedText" style="display:none; text-align:center; color:#ff4d4d; font-weight:600; margin-top:15px;">QR Code Removed (Manual UPI ID Applied)</p>
+
+<label style="margin-top:25px; display:block; font-weight:600;">Detected UPI ID</label>
+<input type="text" id="upiIdPreview" class="readonly-input" readonly>
+
+<div id="upiVerificationBox" style="margin-top:25px;">
+    <label style="display:block; font-weight:600; margin-bottom:10px;">Is this UPI ID correct?</label>
+    <div class="radio-group">
+        <label class="radio-label"><input type="radio" name="upiCorrect" value="yes" checked> Yes</label>
+        <label class="radio-label"><input type="radio" name="upiCorrect" value="no"> No</label>
+    </div>
+</div>
+
+<div id="manualUpdateBox" style="display:none; margin-top:20px; padding:20px; background:rgba(255,77,141,0.08); border-radius:18px; border:1px solid rgba(255,77,141,0.2);">
+    <!-- Wording changed to reflect QR update -->
+    <label style="display:block; font-weight:600; margin-bottom:10px; color:#ff4d8d;">Do you want to update the QR code?</label>
+    <div class="radio-group">
+        <label class="radio-label"><input type="radio" name="manualUpdate" value="yes"> Yes</label>
+        <label class="radio-label"><input type="radio" name="manualUpdate" value="no"> No</label>
+    </div>
+
+    <div id="newUpiBox" style="display:none; margin-top:20px;">
+        <!-- NEW: Upload QR Option -->
+        <label style="display:block; font-weight:600; margin-bottom:8px;">Upload New QR Code</label>
+        <input type="file" id="newQrUpload" accept="image/*" style="width:100%; margin-bottom:5px; padding: 10px; border-radius: 10px; border: 1px solid #ccc; background:#fff;">
+        <p id="qrScanStatus" style="font-size:13px; font-weight:600; margin-bottom:15px; display:none;"></p>
+
+        <label style="display:block; font-weight:600; margin-bottom:8px;">Enter New UPI ID</label>
+        <div style="display:flex; align-items:center; gap:12px;">
+            <input type="text" id="newUpiInput" placeholder="example@bank" style="flex:1;">
+            <span id="upiTick" style="display:none; font-size:24px;">✅</span>
+        </div>
+        
+        <!-- NEW: Mismatch warning text -->
+        <p id="upiMatchError" style="display:none; color:#ff4d4d; font-size:14px; margin-top:8px; font-weight:500;">Manual UPI ID doesn't matches the uploaded qr</p>
+        
+        <button id="updateUpiBtn" class="primary" style="display:none; margin-top:15px; padding:14px;">Update QR & UPI ID</button>
+    </div>
+</div>
+</div>
+
+<!-- =========================
+Agreement
+========================= -->
+<div class="section">
+<label class="check">
+<input type="checkbox" id="agree1">
+I confirm that all campaign information is correct.
+</label>
+<label class="check">
+<input type="checkbox" id="agree2">
+I agree to GiftBloom Terms & Conditions.
+</label>
+</div>
+
+<!-- =========================
+Buttons
+========================= -->
+<div class="buttons">
+<button id="editBtn" class="secondary">✏ Edit Campaign</button>
+<button id="publishBtn" class="primary">🚀 Publish Campaign</button>
+</div>
+
+</div>
+</section>
+
+<!-- Added jsQR script to read the new uploaded image -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script src="preview.js"></script>
+</body>
+</html>

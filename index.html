@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+<title>GiftBloom</title>
+
+<link rel="stylesheet" href="style.css">
+
+<link rel="preconnect"
+href="https://fonts.googleapis.com">
+
+<link rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+rel="stylesheet">
+
+</head>
+
+<body>
+    <script>
+        // Check if maintenance mode is active before letting the user interact
+        const siteSettings = JSON.parse(localStorage.getItem("adminSettings")) || {};
+        
+        if (siteSettings.maintenance) {
+            // Overwrite the screen UI completely
+            document.body.innerHTML = `
+                <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh; background:linear-gradient(135deg,#FFF7FB,#FFEAF4,#F8ECFF); font-family:'Poppins',sans-serif; text-align:center; padding: 20px;">
+                    <h1 style="color:#ff4d8d; font-size:45px; margin-bottom: 10px;">🛠 Site Under Maintenance</h1>
+                    <p style="color:#666; font-size:18px; max-width: 500px;">We are currently upgrading GiftBloom to serve you better. Donations are temporarily paused. Please check back shortly!</p>
+                </div>
+            `;
+            // Stop any further scripts on the frontend from executing
+            window.stop(); 
+        }
+    </script>
+<!-- Floating Hearts -->
+
+<div class="hearts"></div>
+
+<!-- ===========================
+        NAVIGATION
+============================ -->
+
+<header>
+
+<nav class="navbar">
+
+<div class="logo">
+
+💝 GiftBloom
+
+</div>
+
+<div id="menuBtn"
+class="menu-btn">
+
+☰
+
+</div>
+
+<ul id="menu">
+
+<li>
+
+<a href="index.html">Home</a>
+
+</li>
+
+<li>
+
+<a href="allCampaigns.html">Campaigns</a>
+
+</li>
+
+<li>
+
+<a href="login.html">Login</a>
+
+</li>
+
+<li>
+
+<a class="signup"
+href="signup.html">
+
+Sign Up
+
+</a>
+
+</li>
+
+</ul>
+
+</nav>
+
+</header>
+
+<!-- ===========================
+          HERO
+============================ -->
+
+<section class="hero">
+
+<div class="glass hero-box">
+
+<div class="gift">
+
+🎁
+
+</div>
+
+<h1>
+
+Every Gift
+
+<span>
+
+Deserves
+
+Love ❤️
+
+</span>
+
+</h1>
+
+<p>
+
+Turn beautiful moments into
+
+everlasting memories.
+
+Create a campaign and
+
+let kind hearts help you
+
+surprise someone special.
+
+</p>
+
+<div class="hero-buttons">
+
+<button class="primary" onclick="location.href='create.html'">
+
+💝 Create Campaign
+
+</button>
+
+<button class="secondary" onclick="location.href='allCampaigns.html'">
+
+❤️ Browse Campaigns
+
+</button>
+
+</div>
+
+</div>
+
+</section>
+
+<!-- ===========================
+      TRENDING CAMPAIGNS
+============================ -->
+
+<section class="campaign-section">
+    <div class="title">
+        <h2>✨ Trending Campaigns</h2>
+        <p>Help someone create an unforgettable surprise.</p>
+    </div>
+
+    <div class="campaigns" id="trendingCampaigns">
+        </div>
+</section>
+
+
+<!-- ===========================
+        HOW IT WORKS
+=========================== -->
+
+<section class="works">
+
+    <div class="title">
+        <h2>❤️ How It Works</h2>
+        <p>Creating a surprise gift is as easy as four simple steps.</p>
+    </div>
+
+    <div class="timeline">
+
+        <div class="glass step-card">
+            <div class="step-number">1</div>
+            <div class="step-icon">🎁</div>
+            <h3>Create Campaign</h3>
+            <p>Create your gift campaign and set your target amount.</p>
+        </div>
+
+        <div class="connector"></div>
+
+        <div class="glass step-card">
+            <div class="step-number">2</div>
+            <div class="step-icon">📤</div>
+            <h3>Share Campaign</h3>
+            <p>Share your campaign link with friends and family.</p>
+        </div>
+
+        <div class="connector"></div>
+
+        <div class="glass step-card">
+            <div class="step-number">3</div>
+            <div class="step-icon">💝</div>
+            <h3>Receive Support</h3>
+            <p>People contribute to help you reach your goal.</p>
+        </div>
+
+        <div class="connector"></div>
+
+        <div class="glass step-card">
+            <div class="step-number">4</div>
+            <div class="step-icon">🎉</div>
+            <h3>Celebrate</h3>
+            <p>Buy the gift and make someone's day unforgettable.</p>
+        </div>
+
+    </div>
+
+</section>
+<!-- ===========================
+          STATISTICS
+=========================== -->
+<section class="stats">
+
+   <div class="glass stat">
+    <div class="stat-icon">❤️</div>
+    <h2 class="counter" id="stat-campaigns" data-target="0">0</h2>
+    <p>Campaigns</p>
+   </div>
+
+  <div class="glass stat">
+    <div class="stat-icon">👥</div>
+    <h2 class="counter" id="stat-donors" data-target="0">0</h2>
+    <p>Donors</p>
+  </div>
+
+   <div class="glass stat">
+    <div class="stat-icon">💰</div>
+    <h2>₹<span class="counter" id="stat-raised" data-target="0">0</span></h2>
+    <p>Raised</p>
+  </div>
+
+   <div class="glass stat">
+    <div class="stat-icon">🎉</div>
+    <h2 class="counter" id="stat-completed" data-target="0">0</h2>
+    <p>Completed</p>
+  </div>
+
+</section>
+
+<!-- ===========================
+       CALL TO ACTION
+=========================== -->
+
+<section class="cta">
+
+    <div class="glass cta-box">
+
+        <h2>
+            Ready To Make Someone Smile? ❤️
+        </h2>
+
+        <p>
+
+            Start your first campaign today and
+            let kindness turn dreams into reality.
+
+        </p>
+
+        <button class="primary" onclick="location.href='create.html'">
+
+            💝 Create Campaign
+
+        </button>
+
+    </div>
+
+</section>
+
+
+<script src="script.js"></script>
+
+</body>
+
+</html>

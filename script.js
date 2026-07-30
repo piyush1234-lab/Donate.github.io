@@ -4,6 +4,121 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbz3j7pEIhMfam_dVATTNJe6rHAaMNUAz55ywLqEj4XDJ5qb6hygrvGQQfSj2x1KLtRM/exec";
 
 /*=====================================
+      CANVAS PARTICLE HEART LOADER
+=====================================*/
+const loaderCanvas = document.getElementById('loaderCanvas');
+let loaderAnimId;
+
+if (loaderCanvas) {
+    const ctx = loaderCanvas.getContext('2d');
+    const cw = loaderCanvas.width = 300;
+    const ch = loaderCanvas.height = 300;
+    const cx = cw / 2;
+    const cy = ch / 2 - 20;
+
+    // --- Dynamic Name Logic ---
+    const loggedInUser = ""; // e.g., "Sarah"
+    const nameEl = document.getElementById('loaderName');
+    if (nameEl) {
+        nameEl.textContent = loggedInUser ? loggedInUser : "Loading...";
+    }
+
+    const HEART_RES = 256;
+    const hpx = new Float32Array(HEART_RES);
+    const hpy = new Float32Array(HEART_RES);
+
+    // Generate mathematical heart boundaries
+    for (let i = 0; i < HEART_RES; i++) {
+        const t = (i / HEART_RES) * Math.PI * 2;
+        hpx[i] = 16 * Math.pow(Math.sin(t), 3);
+        hpy[i] = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+    }
+
+    const N = 350; 
+    const particles = [];
+    const colors = ['#ff4d8d', '#4740ff', '#ff1493', '#ff84b7', '#ffb3d9', '#ff40a8']; 
+
+    // Start particles from center
+    for (let i = 0; i < N; i++) {
+        particles.push({
+            x: cx, 
+            y: cy, 
+            vx: (Math.random() - 0.5) * 15, 
+            vy: (Math.random() - 0.5) * 15, 
+            size: Math.random() * 1.2 + 0.8,
+            targetIndex: (i * 7) % HEART_RES,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            offsetT: Math.random() * Math.PI * 2
+        });
+    }
+
+    function animateLoader(time) {
+        // Transparent trail trick
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+        ctx.fillRect(0, 0, cw, ch);
+
+        // Switch to glowing blend mode for particles
+        ctx.globalCompositeOperation = 'lighter';
+
+        const cycle = (time * 0.0013) % 1;
+        let pulse = 0;
+        if (cycle < 0.12) pulse = Math.sin((cycle / 0.12) * Math.PI);
+        else if (cycle > 0.18 && cycle < 0.35) pulse = 0.5 * Math.sin(((cycle - 0.18) / 0.17) * Math.PI);
+        const hs = 2.25 * (1 + pulse * 0.15); 
+
+        // The active index travels from 0 to 256 around the heart path
+        // Adjust the "0.15" multiplier to change the speed of the traveling light
+        const activeIndex = (time * 0.10) % HEART_RES; 
+
+        for (let i = 0; i < N; i++) {
+            let p = particles[i];
+            let tx = cx + hpx[p.targetIndex] * hs;
+            let ty = cy + hpy[p.targetIndex] * hs;
+
+            p.vx += (tx - p.x) * 0.08; 
+            p.vy += (ty - p.y) * 0.08;
+            
+            p.vx += Math.sin(time * 0.002 + p.offsetT) * 0.03;
+            p.vy += Math.cos(time * 0.002 + p.offsetT) * 0.03;
+
+            p.vx *= 0.75; 
+            p.vy *= 0.75;
+
+            p.x += p.vx;
+            p.y += p.vy;
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+
+            // Calculate how close this particle is to the traveling light
+            let diff = (activeIndex - p.targetIndex + HEART_RES) % HEART_RES;
+
+            // If the particle is within 25 steps behind the active light index, illuminate it!
+            if (diff < 25) {
+                // Fades out from 1 at the head, to 0 at the tail
+                const intensity = 1 - (diff / 25); 
+                
+                ctx.fillStyle = '#ff4d8d '; // White core for the light
+                ctx.shadowBlur = 15 * intensity; 
+                ctx.shadowColor = '#ff4d8d'; // Main pink glow
+                ctx.fill();
+                
+                ctx.shadowBlur = 0; // Reset for other particles
+            } else {
+                // Draw normal unlit particle
+                ctx.fillStyle = p.color;
+                ctx.fill();
+            }
+        }
+
+        loaderAnimId = requestAnimationFrame(animateLoader);
+    }
+    loaderAnimId = requestAnimationFrame(animateLoader);
+}
+
+
+/*=====================================
         DYNAMIC AUTH MENU
 =====================================*/
 function updateNavbar() {
@@ -17,7 +132,7 @@ function updateNavbar() {
             <li><a href="index.html">Home</a></li>
             <li><a href="allCampaigns.html?sort=MyCampaigns">My Campaigns</a></li>
             <li><a href="dashboard(combined).html">Dashboard</a></li>
-            <li><a class="signup" href="profile.html">Profile</a></li>
+            <li><a class="signup" href="dashboard(combined).html?target=profile">Profile</a></li>
         `;
     } else {
         menu.innerHTML = `
@@ -244,33 +359,73 @@ function animateCounters() {
 =====================================*/
 async function fetchHomepageData() {
     const campaignsContainer = document.getElementById("trendingCampaigns");
+    const loader = document.getElementById("pageLoader"); 
     
     if (campaignsContainer) {
         campaignsContainer.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px;">Loading live campaigns... ⏳</div>`;
     }
 
+    // 1. Create a 10-second strict timer (Kill Switch)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); 
+
     try {
         const response = await fetch(API_URL, {
             method: "POST",
-            body: JSON.stringify({ action: "getAllCampaigns" })
+            body: JSON.stringify({ action: "getAllCampaigns" }),
+            signal: controller.signal // Link timer to fetch
         });
+        
+        clearTimeout(timeoutId); // Turn off timer if successful
+
         const result = await response.json();
 
         if (result.status === "Success") {
             const allCampaigns = result.data;
-            
-            // 1. Calculate and Render Stats
             calculateAndRenderStats(allCampaigns);
-            
-            // 2. Render Active Trending Campaigns
             renderTrendingCampaigns(allCampaigns, campaignsContainer);
         } else {
-            if (campaignsContainer) campaignsContainer.innerHTML = `<p style="text-align:center;">Failed to load campaigns.</p>`;
+            throw new Error("Failed to load");
         }
     } catch (error) {
-        if (campaignsContainer) campaignsContainer.innerHTML = `<p style="text-align:center;">Network error. Please try again.</p>`;
+        clearTimeout(timeoutId); 
+        
+        const errorMsg = error.name === 'AbortError' 
+            ? "Server is taking too long. Please try again." 
+            : "Network error. Please try again.";
+
+        if (campaignsContainer) campaignsContainer.innerHTML = `
+            <p style="text-align:center; color: #666;">
+                ${errorMsg} 
+                <span onclick="triggerReload()" style="cursor: pointer; font-size: 1.4em; display: inline-block; vertical-align: middle; margin-left: 8px; transition: transform 0.4s ease;" onmouseover="this.style.transform='rotate(180deg)'" onmouseout="this.style.transform='rotate(0deg)'" title="Try Again">🔄</span>
+            </p>`;
+    } finally {
+        // 2. ALWAYS hide the loader the exact millisecond the fetch finishes!
+        if (loader && loader.style.display !== "none") {
+            loader.classList.add("fade-out");
+            setTimeout(() => {
+                loader.style.display = "none";
+            }, 600);
+        }
     }
 }
+
+/*=====================================
+        TRIGGER RELOAD ANIMATION
+=====================================*/
+window.triggerReload = function() {
+    const loader = document.getElementById("pageLoader");
+    
+    // Just show the loader and start the fetch immediately. 
+    // fetchHomepageData() will handle turning it off!
+    if (loader) {
+        loader.style.display = "flex";
+        loader.classList.remove("fade-out");
+    }
+
+    fetchHomepageData();
+};
+
 
 /*=====================================
       CALCULATE REAL STATS

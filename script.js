@@ -1,7 +1,7 @@
 /*=====================================
       API ENDPOINT
 =====================================*/
-const API_URL = "https://script.google.com/macros/s/AKfycbz3j7pEIhMfam_dVATTNJe6rHAaMNUAz55ywLqEj4XDJ5qb6hygrvGQQfSj2x1KLtRM/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwhYo3cFhQ-lIy_ogq7imn8knXp3knIDBa9MCH8WeOdD2EnXAouUdf8D5gIA9NIhL4l/exec";
 
 /*=====================================
       CANVAS PARTICLE HEART LOADER
@@ -464,12 +464,20 @@ function calculateAndRenderStats(allCampaigns) {
 }
 
 /*=====================================
-      RENDER TRENDING CARDS
+      RENDER TRENDING CARDS (TOP 10)
 =====================================*/
 function renderTrendingCampaigns(allCampaigns, container) {
     if (!container) return;
 
-    const activeCampaigns = allCampaigns.filter(c => c.status === "Active");
+    // 1. Filter only active campaigns
+    let activeCampaigns = allCampaigns.filter(c => c.status === "Active");
+
+    // 2. Sort by highest number of donors to make it truly "Trending"
+    activeCampaigns.sort((a, b) => (Number(b.donorsCount) || 0) - (Number(a.donorsCount) || 0));
+
+    // 3. Slice to only keep the top 10 campaigns
+    activeCampaigns = activeCampaigns.slice(0, 10);
+
     container.innerHTML = "";
 
     if (activeCampaigns.length === 0) {
@@ -492,14 +500,24 @@ function renderTrendingCampaigns(allCampaigns, container) {
         let percent = target > 0 ? Math.round((raised / target) * 100) : 0;
         if (percent > 100) percent = 100;
 
-        const displayImage = (campaign.giftImageUrl && campaign.giftImageUrl.length > 10) 
-            ? campaign.giftImageUrl 
-            : 'images/teddy.jpg';
+                // 👉 GOOGLE DRIVE IMAGE FIX (Matching campaign.js exactly)
+        let displayImage = 'images/teddy.jpg'; // Default fallback
+        
+        if (campaign.giftImageUrl && campaign.giftImageUrl.trim() !== "") {
+            displayImage = campaign.giftImageUrl.trim();
+            
+            // Convert 'uc?id=' to a web-safe thumbnail URL
+            if (displayImage.includes("drive.google.com/uc?id=")) {
+                let fileId = displayImage.split("id=")[1].split("&")[0]; // Extract the ID safely
+                displayImage = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w1000";
+            }
+        }
 
         container.innerHTML += `
         <div class="glass card">
             <div class="card-image">
-                <img src="${displayImage}" alt="Gift">
+                <img src="${displayImage}" alt="Gift" onerror="this.onerror=null; this.src='images/teddy.jpg';">
+
                 <div class="badge">❤️ Trending</div>
             </div>
             <div class="content">
@@ -533,6 +551,85 @@ function renderTrendingCampaigns(allCampaigns, container) {
 
     if (typeof initCardTilt === "function") initCardTilt();
 }
-
 // Trigger the database fetch immediately when the page loads
 fetchHomepageData();
+
+
+
+/*=====================================
+          GEMINI CHATBOT API
+=====================================*/
+const chatbotToggle = document.getElementById("chatbotToggle");
+const chatbotWindow = document.getElementById("chatbotWindow");
+const closeChat = document.getElementById("closeChat");
+const chatBody = document.getElementById("chatBody");
+const chatInput = document.getElementById("chatInput");
+const sendChat = document.getElementById("sendChat");
+
+// Toggle Window Visibility
+if (chatbotToggle && chatbotWindow) {
+    chatbotToggle.addEventListener("click", () => {
+        chatbotWindow.style.display = chatbotWindow.style.display === "none" ? "flex" : "none";
+    });
+}
+
+if (closeChat && chatbotWindow) {
+    closeChat.addEventListener("click", () => {
+        chatbotWindow.style.display = "none";
+    });
+}
+
+// Helper Function: Append Messages
+function appendMessage(text, sender) {
+    const msgDiv = document.createElement("div");
+    msgDiv.classList.add("message", sender === "user" ? "user-message" : "bot-message");
+    msgDiv.innerText = text;
+    chatBody.appendChild(msgDiv);
+    chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+async function fetchGeminiResponse(userText) {
+    const loadingDiv = document.createElement("div");
+    loadingDiv.classList.add("message", "bot-message", "loading-dots");
+    loadingDiv.innerText = "Typing...";
+    chatBody.appendChild(loadingDiv);
+    chatBody.scrollTop = chatBody.scrollHeight;
+
+    try {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "askAI", data: { userText: userText } })
+        });
+        const result = await response.json();
+        loadingDiv.remove();
+
+        if (result.status === "Success") {
+            appendMessage(result.data.reply, "bot");
+        } else {
+            appendMessage("I'm sorry, I couldn't process that right now.", "bot");
+        }
+    } catch (error) {
+        loadingDiv.remove();
+        console.error("Fetch/Network Error:", error);
+        appendMessage("Oops! I'm having trouble connecting to the server.", "bot");
+    }
+}
+
+// Handle Send Action
+function handleChatSend() {
+    const text = chatInput.value.trim();
+    if (text === "") return;
+
+    appendMessage(text, "user");
+    chatInput.value = "";
+    fetchGeminiResponse(text);
+}
+
+if (sendChat && chatInput) {
+    sendChat.addEventListener("click", handleChatSend);
+    chatInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+            handleChatSend();
+        }
+    });
+}

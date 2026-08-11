@@ -1,7 +1,7 @@
 /*=====================================
       API ENDPOINT
 =====================================*/
-const API_URL = "https://script.google.com/macros/s/AKfycbwhYo3cFhQ-lIy_ogq7imn8knXp3knIDBa9MCH8WeOdD2EnXAouUdf8D5gIA9NIhL4l/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxyVajhdo-ZT_N5px_hqM2fFWNqpAu3yw6YRZDhK0_3jQ_eLdzKYhnvyfeQyxuGP_jS/exec";
 
 /*=====================================
       CANVAS PARTICLE HEART LOADER
@@ -78,7 +78,7 @@ if (loaderCanvas) {
 
             p.vx += (tx - p.x) * 0.08; 
             p.vy += (ty - p.y) * 0.08;
-            
+
             p.vx += Math.sin(time * 0.002 + p.offsetT) * 0.03;
             p.vy += Math.cos(time * 0.002 + p.offsetT) * 0.03;
 
@@ -98,12 +98,12 @@ if (loaderCanvas) {
             if (diff < 25) {
                 // Fades out from 1 at the head, to 0 at the tail
                 const intensity = 1 - (diff / 25); 
-                
+
                 ctx.fillStyle = '#ff4d8d '; // White core for the light
                 ctx.shadowBlur = 15 * intensity; 
                 ctx.shadowColor = '#ff4d8d'; // Main pink glow
                 ctx.fill();
-                
+
                 ctx.shadowBlur = 0; // Reset for other particles
             } else {
                 // Draw normal unlit particle
@@ -275,10 +275,10 @@ function initCardTilt() {
             const rect = card.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
-            
+
             const rotateY = (x - rect.width / 2) / 20;
             const rotateX = (rect.height / 2 - y) / 20;
-            
+
             card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-8px)`;
         });
 
@@ -331,7 +331,7 @@ function animateCounters() {
     counters.forEach(counter => {
         let target = +counter.dataset.target;
         let count = 0;
-        
+
         let speed = target / 60; 
         if (speed < 1 && target > 0) speed = 1; 
 
@@ -344,7 +344,7 @@ function animateCounters() {
                 counter.innerText = target; 
             }
         }
-        
+
         if(target > 0) {
             update();
         } else {
@@ -360,7 +360,7 @@ function animateCounters() {
 async function fetchHomepageData() {
     const campaignsContainer = document.getElementById("trendingCampaigns");
     const loader = document.getElementById("pageLoader"); 
-    
+
     if (campaignsContainer) {
         campaignsContainer.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px;">Loading live campaigns... ⏳</div>`;
     }
@@ -375,7 +375,7 @@ async function fetchHomepageData() {
             body: JSON.stringify({ action: "getAllCampaigns" }),
             signal: controller.signal // Link timer to fetch
         });
-        
+
         clearTimeout(timeoutId); // Turn off timer if successful
 
         const result = await response.json();
@@ -389,7 +389,7 @@ async function fetchHomepageData() {
         }
     } catch (error) {
         clearTimeout(timeoutId); 
-        
+
         const errorMsg = error.name === 'AbortError' 
             ? "Server is taking too long. Please try again." 
             : "Network error. Please try again.";
@@ -415,7 +415,7 @@ async function fetchHomepageData() {
 =====================================*/
 window.triggerReload = function() {
     const loader = document.getElementById("pageLoader");
-    
+
     // Just show the loader and start the fetch immediately. 
     // fetchHomepageData() will handle turning it off!
     if (loader) {
@@ -440,10 +440,10 @@ function calculateAndRenderStats(allCampaigns) {
         const raised = Number(c.raisedAmount) || 0;
         const target = Number(c.targetAmount) || 0;
         const donors = Number(c.donorsCount) || 0;
-        
+
         totalDonors += donors;
         totalRaised += raised;
-        
+
         if (c.status === "Completed" || (target > 0 && raised >= target)) {
             totalCompleted++;
         }
@@ -496,16 +496,16 @@ function renderTrendingCampaigns(allCampaigns, container) {
     activeCampaigns.forEach((campaign) => {
         const raised = Number(campaign.raisedAmount) || 0;
         const target = Number(campaign.targetAmount) || 0;
-        
+
         let percent = target > 0 ? Math.round((raised / target) * 100) : 0;
         if (percent > 100) percent = 100;
 
                 // 👉 GOOGLE DRIVE IMAGE FIX (Matching campaign.js exactly)
         let displayImage = 'images/teddy.jpg'; // Default fallback
-        
+
         if (campaign.giftImageUrl && campaign.giftImageUrl.trim() !== "") {
             displayImage = campaign.giftImageUrl.trim();
-            
+
             // Convert 'uc?id=' to a web-safe thumbnail URL
             if (displayImage.includes("drive.google.com/uc?id=")) {
                 let fileId = displayImage.split("id=")[1].split("&")[0]; // Extract the ID safely
@@ -606,7 +606,7 @@ async function fetchGeminiResponse(userText) {
         if (result.status === "Success") {
             appendMessage(result.data.reply, "bot");
         } else {
-            appendMessage("I'm sorry, I couldn't process that right now.", "bot");
+            appendMessage(result.message || "I'm sorry, I couldn't process that right now.", "bot");
         }
     } catch (error) {
         loadingDiv.remove();

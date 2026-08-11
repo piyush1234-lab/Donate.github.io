@@ -171,10 +171,17 @@ surprise someone special.
         <p>Help someone create an unforgettable surprise.</p>
     </div>
 
+    <!-- The grid where the 10 campaigns will load -->
     <div class="campaigns" id="trendingCampaigns">
-        </div>
-</section>
+    </div>
 
+    <!-- NEW BUTTON: Redirects to all campaigns -->
+    <div style="text-align: center; margin-top: 45px;">
+        <button class="secondary" style="padding: 16px 40px; font-size: 18px; border: 2px solid #ff4d8d;" onclick="location.href='allCampaigns.html'">
+            👀 View All Campaigns →
+        </button>
+    </div>
+</section>
 
 <!-- ===========================
         HOW IT WORKS
@@ -286,6 +293,26 @@ surprise someone special.
 
 </section>
 
+<!-- ===========================
+        GEMINI CHATBOT
+============================ -->
+<button id="chatbotToggle" class="chat-toggle-btn">
+    💬
+</button>
+
+<div id="chatbotWindow" class="glass chat-window" style="display: none;">
+    <div class="chat-header">
+        <h3>💝 GiftBloom Assistant</h3>
+        <span id="closeChat">✖</span>
+    </div>
+    <div id="chatBody" class="chat-body">
+        <div class="message bot-message">Hi there! 👋 I am here to help you to choose the suitable gift for your friend and can help u explore the Giftbloom page.</div>
+    </div>
+    <div class="chat-footer">
+        <input type="text" id="chatInput" placeholder="Type a message..." autocomplete="off">
+        <button id="sendChat">➤</button>
+    </div>
+</div>
 
 <script src="script.js"></script>
 

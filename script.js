@@ -566,12 +566,9 @@ const chatBody = document.getElementById("chatBody");
 const chatInput = document.getElementById("chatInput");
 const sendChat = document.getElementById("sendChat");
 
-// Toggle Window Visibility
-if (chatbotToggle && chatbotWindow) {
-    chatbotToggle.addEventListener("click", () => {
-        chatbotWindow.style.display = chatbotWindow.style.display === "none" ? "flex" : "none";
-    });
-}
+let chatHistory = []; // ← ADD THIS LINE
+
+// ⚠️ Duplicate toggle event listener removed from here!
 
 if (closeChat && chatbotWindow) {
     closeChat.addEventListener("click", () => {
@@ -588,6 +585,75 @@ function appendMessage(text, sender) {
     chatBody.scrollTop = chatBody.scrollHeight;
 }
 
+/*=====================================
+      AI CHATBOT HELPER FUNCTIONS
+=====================================*/
+
+// 1. Shows initial clickable chips when the chat opens
+function showStarterSuggestions() {
+    if (chatHistory.length > 0) return; // Don't show if they are already chatting
+
+    const starters = [
+        "Suggest a birthday gift! 🎂",
+        "How do I create a campaign? 🤔",
+        "What are the trending gifts? 🎁"
+    ];
+    appendActionButtons(starters);
+}
+
+// 2. Removes hidden action tags from the AI's response text
+function stripActionsTag(text) {
+    if (!text) return "";
+    return text.replace(/\[ACTION:.*?\]/gi, '').trim();
+}
+
+// 3. Detects hidden action tags to turn into clickable buttons
+function detectSuggestedActions(text) {
+    if (!text) return [];
+    const matches = [...text.matchAll(/\[ACTION:(.*?)\]/gi)];
+    return matches.map(m => m[1].trim());
+}
+
+// 4. Creates and appends the clickable suggestion buttons to the chat
+function appendActionButtons(actions) {
+    if (!actions || actions.length === 0) return;
+    
+    const container = document.createElement("div");
+    container.style.display = "flex";
+    container.style.gap = "8px";
+    container.style.flexWrap = "wrap";
+    container.style.marginTop = "8px";
+    container.style.marginBottom = "8px";
+
+    actions.forEach(action => {
+        const btn = document.createElement("button");
+        btn.innerText = action;
+        btn.style.padding = "6px 12px";
+        btn.style.borderRadius = "15px";
+        btn.style.border = "1px solid #ff4d8d";
+        btn.style.background = "#fff0f5"; // Light pink background
+        btn.style.color = "#ff4d8d";
+        btn.style.cursor = "pointer";
+        btn.style.fontSize = "13px";
+        btn.style.transition = "0.2s";
+        
+        // Add hover effect
+        btn.onmouseover = () => btn.style.background = "#ffe6ef";
+        btn.onmouseout = () => btn.style.background = "#fff0f5";
+
+        btn.onclick = () => {
+            chatInput.value = action.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, ''); // Removes emojis from input box
+            handleChatSend();
+            container.remove(); // Hide buttons after clicking
+        };
+        container.appendChild(btn);
+    });
+    
+    chatBody.appendChild(container);
+    chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+
 async function fetchGeminiResponse(userText) {
     const loadingDiv = document.createElement("div");
     loadingDiv.classList.add("message", "bot-message", "loading-dots");
@@ -598,13 +664,28 @@ async function fetchGeminiResponse(userText) {
     try {
         const response = await fetch(API_URL, {
             method: "POST",
-            body: JSON.stringify({ action: "askAI", data: { userText: userText } })
+            // ✅ CORS Fix: Headers and redirect added back
+            headers: {
+                "Content-Type": "text/plain;charset=utf-8",
+            },
+            redirect: "follow", 
+            body: JSON.stringify({
+                action: "askAI",
+                data: { userText: userText, history: chatHistory }
+            })
         });
         const result = await response.json();
         loadingDiv.remove();
 
-        if (result.status === "Success") {
-            appendMessage(result.data.reply, "bot");
+       if (result.status === "Success") {
+    const cleanReply = stripActionsTag(result.data.reply);
+    appendMessage(cleanReply, "bot");
+    appendActionButtons(detectSuggestedActions(result.data.reply));
+            
+            chatHistory.push({ role: "user", text: userText });
+            chatHistory.push({ role: "model", text: result.data.reply });
+            
+            if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
         } else {
             appendMessage(result.message || "I'm sorry, I couldn't process that right now.", "bot");
         }
@@ -633,3 +714,214 @@ if (sendChat && chatInput) {
         }
     });
 }
+
+/*=====================================
+      FESTIVAL DATA (calendar-bharat, free/no-key)
+=====================================*/
+
+// Fixed-date national days — never shift, so no need to depend on the API for these
+const FIXED_NATIONAL_DAYS = {
+    "1-26": "Happy Republic Day! 🇮🇳",
+    "8-15": "Happy Independence Day! 🇮🇳",
+    "10-2": "Happy Gandhi Jayanti! 🙏",
+    "12-25": "Merry Christmas! 🎄",
+};
+
+// Regional festivals — festival name → states that celebrate it.
+// National/lunar festivals not in this map (Diwali, Holi, Dussehra, etc.)
+// show to everyone automatically.
+const REGIONAL_FESTIVALS = {
+    "Durga Puja":        ["West Bengal", "Tripura", "Assam", "Odisha"],
+    "Kali Puja":         ["West Bengal"],
+    "Poila Boishakh":    ["West Bengal"],
+    "Ganesh Chaturthi":  ["Maharashtra", "Goa", "Karnataka", "Telangana"],
+    "Gudi Padwa":        ["Maharashtra"],
+    "Teej":              ["Rajasthan"],
+    "Hartalika Teej":    ["Rajasthan"],
+    "Kajari Teej":       ["Rajasthan"],
+    "Gangaur":           ["Rajasthan"],
+    "Navratri":          ["Gujarat"],
+    "Garba":             ["Gujarat"],
+    "Onam":              ["Kerala"],
+    "Vishu":             ["Kerala"],
+    "Pongal":            ["Tamil Nadu"],
+    "Bihu":              ["Assam"],
+    "Baisakhi":          ["Punjab"],
+    "Lohri":             ["Punjab", "Haryana", "Himachal Pradesh"],
+    "Bathukamma":        ["Telangana"],
+    "Bonalu":            ["Telangana"],
+    "Chhath Puja":       ["Bihar", "Jharkhand", "Uttar Pradesh"],
+    "Rath Yatra":        ["Odisha"],
+    "Nuakhai":           ["Odisha"],
+    "Hornbill Festival": ["Nagaland"],
+    "Losar":             ["Sikkim"],
+};
+
+// Match calendar-bharat's event name against our regional map,
+// using substring matching since naming varies ("Teej" vs "Hartalika Teej")
+function findRegionalMatch(eventName) {
+    const key = Object.keys(REGIONAL_FESTIVALS).find(name =>
+        eventName.toLowerCase().includes(name.toLowerCase()) ||
+        name.toLowerCase().includes(eventName.toLowerCase())
+    );
+    return key ? REGIONAL_FESTIVALS[key] : null;
+}
+
+async function getTodaysFestival(userState) {
+    const now = new Date();
+
+    // 1. Check fixed national days first (no API needed)
+    const fixedKey = `${now.getMonth() + 1}-${now.getDate()}`;
+    if (FIXED_NATIONAL_DAYS[fixedKey]) {
+        return FIXED_NATIONAL_DAYS[fixedKey];
+    }
+
+    // 2. Fetch (or use cached) calendar-bharat data for lunar/shifting festivals
+    const year = now.getFullYear();
+    const cacheKey = `festivalCache_${year}`;
+    const cacheTimeKey = `festivalCacheTime_${year}`;
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+
+    let calendarData = null;
+    const cached = localStorage.getItem(cacheKey);
+    const cachedTime = localStorage.getItem(cacheTimeKey);
+
+    if (cached && cachedTime && (Date.now() - Number(cachedTime)) < ONE_DAY) {
+        calendarData = JSON.parse(cached);
+    } else {
+        try {
+            const res = await fetch(`https://jayantur13.github.io/calendar-bharat/calendar/${year}.json`);
+            calendarData = await res.json();
+            localStorage.setItem(cacheKey, JSON.stringify(calendarData));
+            localStorage.setItem(cacheTimeKey, Date.now().toString());
+        } catch (e) {
+            console.log("Festival calendar fetch failed:", e);
+            return null; // fail silently, greeting just skips the occasion line
+        }
+    }
+    if (!calendarData) return null;
+
+    const monthYear = now.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+    const yearData = calendarData[year] || calendarData[String(year)];
+    const monthData = yearData ? yearData[monthYear] : null;
+    if (!monthData) return null;
+
+    const dayNum = now.getDate();
+    const monthName = now.toLocaleDateString("en-US", { month: "long" });
+    const matchKey = Object.keys(monthData).find(k => k.startsWith(`${monthName} ${dayNum},`));
+    if (!matchKey) return null;
+
+    const entry = monthData[matchKey];
+    if (!entry || entry.type === "Good to know") return null;
+
+    const restriction = findRegionalMatch(entry.event);
+    if (restriction) {
+        // Regional festival: only show if user's state matches
+        if (userState && restriction.some(s => userState.toLowerCase().includes(s.toLowerCase()))) {
+            return `Happy ${entry.event}! 🎉`;
+        }
+        return null; // no state match → skip silently
+    }
+
+    // National festival not in our regional map → show to everyone
+    return `Happy ${entry.event}! 🎉`;
+}
+
+/*=====================================
+      DETECT USER LOCATION (once per day, cached)
+=====================================*/
+function detectUserLocation() {
+    if (!navigator.geolocation) return;
+
+    const lastFetched = localStorage.getItem("userStateTimestamp");
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+    if (lastFetched && (Date.now() - Number(lastFetched)) < ONE_DAY) return;
+
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+        try {
+            const { latitude, longitude } = pos.coords;
+            const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
+            const geo = await res.json();
+            const state = geo.principalSubdivision || null; // e.g. "West Bengal"
+            if (state) {
+                localStorage.setItem("userState", state);
+                localStorage.setItem("userStateTimestamp", Date.now());
+            }
+        } catch (e) {
+            console.log("Reverse geocode failed:", e);
+        }
+    }, (err) => {
+        console.log("Geolocation denied or unavailable:", err.message);
+        // fail silently — chatbot just skips state-specific occasion lines
+    }, { timeout: 8000, maximumAge: ONE_DAY });
+}
+
+function getStoredUserState() {
+    return localStorage.getItem("userState") || null;
+}
+
+detectUserLocation(); // run once per page load (throttled internally to once/day)
+
+/*=====================================
+      DYNAMIC WELCOME MESSAGE
+=====================================*/
+function getStoredUserName() {
+    try {
+        const userJson = localStorage.getItem("currentUser");
+        if (!userJson) return null;
+        const user = JSON.parse(userJson);
+        return user.name || null;
+    } catch (e) {
+        return null; // malformed/missing JSON, fail silently
+    }
+}
+function appendHtmlMessage(html) {
+    const msgDiv = document.createElement("div");
+    msgDiv.classList.add("message", "bot-message");
+    msgDiv.innerHTML = html;
+    chatBody.appendChild(msgDiv);
+    chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+async function buildWelcomeMessage() {
+    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+    const userName = getStoredUserName();
+    const userState = getStoredUserState();
+    const occasionLine = await getTodaysFestival(userState);
+
+    const greeting = isLoggedIn && userName
+        ? `Hi ${userName}! 👋`
+        : `Hi there! 👋 Welcome to GiftBloom.`;
+
+    let lines = [greeting];
+    if (occasionLine) lines.push(occasionLine);
+
+    if (isLoggedIn) {
+        lines.push("I am here to help you choose the suitable gift for your friend and can help you explore the GiftBloom page.");
+        appendHtmlMessage(lines.join("<br>"));
+    } else {
+        appendHtmlMessage(lines.join("<br>"));
+        appendHtmlMessage(`Want to be a part of the <strong>GiftBloom family</strong>? <a href="signup.html" style="color:#ff4d8d; font-weight:600; text-decoration:underline;">Join us here →</a>`);
+    }
+}
+
+/*=====================================
+      CHATBOT TOGGLE
+=====================================*/
+let chatOpened = false;
+if (chatbotToggle && chatbotWindow) {
+    chatbotToggle.addEventListener("click", () => {
+        const isClosed = chatbotWindow.style.display === "none" || chatbotWindow.style.display === "";
+        chatbotWindow.style.display = isClosed ? "flex" : "none";
+
+        if (chatbotWindow.style.display === "flex" && !chatOpened) {
+            chatOpened = true;
+            buildWelcomeMessage().then(showStarterSuggestions);
+        }
+    });
+}
+
+// Debug helper — uncomment to inspect the raw calendar-bharat JSON in console
+// fetch(`https://jayantur13.github.io/calendar-bharat/calendar/${new Date().getFullYear()}.json`)
+//   .then(res => res.json())
+//   .then(data => console.log(data));

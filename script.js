@@ -899,10 +899,11 @@ async function buildWelcomeMessage() {
     if (isLoggedIn) {
         lines.push("I am here to help you choose the suitable gift for your friend and can help you explore the GiftBloom page.");
         appendHtmlMessage(lines.join("<br>"));
-    } else {
+  } else {
         appendHtmlMessage(lines.join("<br>"));
         appendHtmlMessage(`Want to be a part of the <strong>GiftBloom family</strong>? <a href="signup.html" style="color:#ff4d8d; font-weight:600; text-decoration:underline;">Join us here →</a>`);
-    }
+        appendHtmlMessage(`Already a member? <a href="login.html" style="color:#ff4d8d; font-weight:600; text-decoration:underline;">Login here →</a>`);
+         }
 }
 
 /*=====================================

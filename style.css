@@ -1225,121 +1225,78 @@ padding:15px 20px;
 }
 
 .navbar ul{
-
 position:absolute;
-
 top:85px;
-
 left:15px;
-
 right:15px;
-
 display:none;
-
 flex-direction:column;
-
 background:rgba(255,255,255,.95);
-
 backdrop-filter:blur(18px);
-
 border-radius:20px;
-
 padding:20px;
-
 box-shadow:0 15px 40px rgba(0,0,0,.1);
-
 gap:20px;
-
 }
 
 .navbar ul.show{
-
 display:flex;
-
 }
 
 .hero h1{
-
 font-size:38px;
-
 }
 
 .hero p{
-
 font-size:16px;
-
 }
 
 .gift{
-
 font-size:70px;
-
 }
 
 .hero-box{
-
 padding:35px 20px;
-
 }
 
 .campaigns{
-
 grid-template-columns:1fr;
-
 }
 
 .stats{
-
 grid-template-columns:1fr 1fr;
-
 }
 
 .cta-box h2{
-
 font-size:30px;
-
 }
-
 }
 
 @media(max-width:480px){
 
 .stats{
-
 grid-template-columns:1fr;
-
 }
 
 .title h2{
-
 font-size:26px;
-
 }
 
 .hero h1{
-
 font-size:30px;
-
 }
 
 .hero-buttons{
-
 flex-direction:column;
-
 }
 
 .hero button{
-
 width:100%;
-
 }
 
 .logo{
-
 font-size:22px;
-
 }
-
 }
 
 /*=================================
@@ -1347,15 +1304,11 @@ font-size:22px;
 ==================================*/
 
 ::-webkit-scrollbar{
-
 width:8px;
-
 }
 
 ::-webkit-scrollbar-track{
-
 background:#ffeef5;
-
 }
 
 ::-webkit-scrollbar-thumb{
@@ -1543,4 +1496,40 @@ background:#ff2d78;
         bottom: 100px;
         height: 60vh;
     }
+}
+
+
+.chat-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+    align-self: flex-start;
+    max-width: 85%;
+}
+
+.chat-action-btn {
+    background: white;
+    color: #ff4d8d;
+    border: 1.5px solid #ff4d8d;
+    padding: 8px 14px;
+    border-radius: 16px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    white-space: nowrap;
+}
+
+.chat-action-btn:hover {
+    background: #ff4d8d;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.chat-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 0 20px 15px;
 }

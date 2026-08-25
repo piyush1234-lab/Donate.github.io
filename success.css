@@ -1,0 +1,286 @@
+/*==============================
+RESET
+==============================*/
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+html{
+scroll-behavior:smooth;
+}
+
+body{
+font-family:'Poppins',sans-serif;
+background:linear-gradient(135deg,#FFF7FB,#FFEAF4,#F8ECFF);
+overflow-x:hidden;
+display:flex;
+justify-content:center;
+align-items:center;
+min-height:100vh;
+color:#333;
+}
+
+/*==============================
+BACKGROUND
+==============================*/
+
+.hearts{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+pointer-events:none;
+overflow:hidden;
+z-index:-2;
+}
+
+body::before{
+content:"";
+position:fixed;
+top:-120px;
+right:-120px;
+width:340px;
+height:340px;
+background:#ffc9e2;
+border-radius:50%;
+filter:blur(120px);
+opacity:.7;
+z-index:-3;
+}
+
+body::after{
+content:"";
+position:fixed;
+bottom:-120px;
+left:-120px;
+width:320px;
+height:320px;
+background:#e8d8ff;
+border-radius:50%;
+filter:blur(120px);
+opacity:.7;
+z-index:-3;
+}
+
+.heart{
+position:absolute;
+bottom:-50px;
+color:#ff4d8d;
+opacity:.35;
+animation:floatHeart linear infinite;
+}
+
+@keyframes floatHeart{
+
+0%{
+transform:translateY(0) rotate(0deg);
+opacity:0;
+}
+
+20%{
+opacity:.35;
+}
+
+100%{
+transform:translateY(-120vh) rotate(360deg);
+opacity:0;
+}
+
+}
+
+/*==============================
+CARD
+==============================*/
+
+.success-page{
+width:100%;
+padding:20px;
+}
+
+.glass{
+background:rgba(255,255,255,.35);
+backdrop-filter:blur(20px);
+border-radius:30px;
+border:1px solid rgba(255,255,255,.45);
+box-shadow:0 20px 50px rgba(0,0,0,.08);
+}
+
+.success-card{
+max-width:720px;
+margin:auto;
+padding:45px 30px;
+text-align:center;
+}
+
+/*==============================
+SUCCESS ICON
+==============================*/
+
+.success-icon{
+font-size:90px;
+animation:bounce 2s infinite;
+}
+
+@keyframes bounce{
+
+0%,100%{
+transform:translateY(0);
+}
+
+50%{
+transform:translateY(-12px);
+}
+
+}
+
+h1{
+margin-top:15px;
+font-size:38px;
+color:#ff4d8d;
+}
+
+.success-card>p{
+margin:15px 0 35px;
+color:#666;
+line-height:1.8;
+}
+
+/*==============================
+SUMMARY
+==============================*/
+
+.summary img {
+    width: 220px;
+    max-width: 100%;
+    border-radius: 20px;
+    margin-bottom: 20px;
+    object-fit: cover;    /* Prevents stretching */
+    aspect-ratio: 1 / 1;  /* Forces a perfect square */
+}
+
+
+.summary h2{
+font-size:30px;
+margin-bottom:10px;
+}
+
+.summary p{
+font-size:18px;
+color:#ff4d8d;
+margin-bottom:30px;
+}
+
+/*==============================
+CAMPAIGN ID
+==============================*/
+
+.campaign-id{
+background:white;
+padding:20px;
+border-radius:20px;
+margin-bottom:30px;
+}
+
+.campaign-id h3{
+margin-top:10px;
+font-size:28px;
+color:#ff4d8d;
+letter-spacing:2px;
+}
+
+/*==============================
+SHARE
+==============================*/
+
+.share-box{
+display:flex;
+gap:10px;
+margin-bottom:35px;
+}
+
+.share-box input{
+flex:1;
+padding:15px;
+border:none;
+border-radius:16px;
+background:white;
+font-size:15px;
+}
+
+.share-box button{
+padding:15px 25px;
+border:none;
+border-radius:16px;
+background:#ff4d8d;
+color:white;
+cursor:pointer;
+}
+
+/*==============================
+BUTTONS
+==============================*/
+
+.buttons{
+display:flex;
+flex-direction:column;
+gap:15px;
+}
+
+.primary,
+.secondary{
+padding:17px;
+border:none;
+border-radius:35px;
+font-size:17px;
+font-weight:600;
+cursor:pointer;
+transition:.3s;
+}
+
+.primary{
+background:linear-gradient(135deg,#ff4d8d,#ff7db2);
+color:white;
+}
+
+.secondary{
+background:white;
+color:#ff4d8d;
+}
+
+.primary:hover,
+.secondary:hover{
+transform:translateY(-5px);
+box-shadow:0 15px 30px rgba(255,77,141,.25);
+}
+
+/*==============================
+MOBILE
+==============================*/
+
+@media(max-width:600px){
+
+.success-card{
+padding:30px 20px;
+}
+
+h1{
+font-size:30px;
+}
+
+.summary img{
+width:170px;
+}
+
+.share-box{
+flex-direction:column;
+}
+
+.campaign-id h3{
+font-size:22px;
+}
+
+}

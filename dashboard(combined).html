@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Dashboard | GiftBloom</title>
+
+<link rel="stylesheet" href="dashboard(combined).css">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+</head>
+
+<body>
+ <script>
+        // Check if maintenance mode is active before letting the user interact
+        const siteSettings = JSON.parse(localStorage.getItem("adminSettings")) || {};
+        
+        if (siteSettings.maintenance) {
+            // Overwrite the screen UI completely
+            document.body.innerHTML = `
+                <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh; background:linear-gradient(135deg,#FFF7FB,#FFEAF4,#F8ECFF); font-family:'Poppins',sans-serif; text-align:center; padding: 20px;">
+                    <h1 style="color:#ff4d8d; font-size:45px; margin-bottom: 10px;">🛠 Site Under Maintenance</h1>
+                    <p style="color:#666; font-size:18px; max-width: 500px;">We are currently upgrading GiftBloom to serve you better. Donations are temporarily paused. Please check back shortly!</p>
+                </div>
+            `;
+            // Stop any further scripts on the frontend from executing
+            window.stop(); 
+        }
+    </script>
+    <div class="hearts"></div>
+
+<!--==========================
+        CANVAS PAGE LOADER
+===========================-->
+<div id="pageLoader" class="page-loader">
+    <div class="loader-content">
+        <!-- Calligraphy Name inside the heart -->
+        <div id="loaderName" class="loader-name">Loading...</div>
+        <canvas id="loaderCanvas"></canvas>
+        <p class="loader-status">Blooming your gifts...</p>
+    </div>
+</div>
+
+<!--==========================
+        NAVBAR
+===========================-->
+
+<header>
+    <nav class="navbar">
+        <div class="logo">
+            💝 GiftBloom
+        </div>
+
+        <div class="nav-right">
+            <div class="notification" onclick="openPage('notifications')">
+                🔔
+                <span class="badge">0</span>
+            </div>
+            <div class="menu-btn" id="menuBtn">
+                ☰
+            </div>
+        </div>
+
+        <ul id="menu">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="#" onclick="location.href='allCampaigns.html?sort=MyCampaigns'"> My Campaigns</a></li>
+            <li><a href="#" onclick="openPage('profile')">Profile</a></li>
+            <li><a href="#" onclick="openPage('settings')">Settings</a></li>
+            <li><a href="#" onclick="openPage('notifications')">Notifications</a></li>
+            <li><a href="#" onclick="openPage('paymentVerification')">Verify Payment</a></li>
+            <li><a href="#" id="logoutBtn">Logout</a></li>
+        </ul>
+    </nav>
+</header>
+
+<!--==========================
+      DASHBOARD
+===========================-->
+
+<section id="home" class="dashboard page active">
+
+<!-- Welcome -->
+
+<div class="glass welcome-card">
+    <h1>
+        <!-- NEW: Added an ID to the greeting text -->
+        <span id="welcomeGreeting">Welcome Back,</span>
+        <span id="dashboardUsername">Rahul</span>
+        👋
+    </h1>
+    <p>Manage all your campaigns from one place.</p>
+</div>
+
+<!-- Statistics -->
+
+<div class="stats-grid">
+
+<div class="glass stat-card">
+
+<div class="icon">
+
+❤️
+
+</div>
+
+<h2>
+
+10
+
+</h2>
+
+<p>
+
+Active Campaigns
+
+</p>
+
+</div>
+
+<div class="glass stat-card">
+
+<div class="icon">
+
+💰
+
+</div>
+
+<h2>
+
+₹1000
+
+</h2>
+
+<p>
+
+Total Raised
+
+</p>
+
+</div>
+
+<div class="glass stat-card">
+
+<div class="icon">
+
+👥
+
+</div>
+
+<h2>
+
+10
+
+</h2>
+
+<p>
+
+Total Donors
+
+</p>
+
+</div>
+
+<div class="glass stat-card">
+
+<div class="icon">
+
+👁
+
+</div>
+
+<h2>
+
+10000
+
+</h2>
+
+<p>
+
+Views
+
+</p>
+
+</div>
+
+</div>
+
+<!-- Quick Actions -->
+
+<div class="glass action-card">
+
+<h2>
+
+Quick Actions
+
+</h2>
+
+<div class="actions">
+
+<button onclick="location.href='create.html'">
+
+➕ Create Campaign
+
+</button>
+<button onclick="location.href='campaigns.html'">
+   
+
+❤️ Browse Campaigns
+</button>
+<button>
+
+📈 Analytics
+
+</button>
+
+<button onclick="openPage('messages')">
+
+💬 Messages
+
+</button>
+
+<button onclick="openPage('paymentVerification')">
+💳 Verify Payments
+</button>
+
+<button onclick="openPage('paymentHistory')">
+📜 Payment History
+</button>
+
+</div>
+
+</div>
+
+<!-- My Campaigns -->
+
+<div class="glass campaign-section">
+
+<h2>
+
+My Campaigns
+
+</h2>
+
+<div id="campaignContainer">
+
+<!-- Campaign Card -->
+
+<div class="campaign-card">
+
+<img
+src="images/teddy.jpg"
+alt="Gift">
+
+<div class="campaign-info">
+
+<h3>
+
+Teddy Bear
+
+</h3>
+
+<p>
+
+For Priya ❤️
+
+</p>
+
+<div class="progress">
+
+<div class="fill"
+style="width:70%;">
+
+</div>
+
+</div>
+
+<span>
+
+₹1400 / ₹2000
+
+</span>
+
+<div class="campaign-buttons">
+    
+<button>
+    
+   👀 View
+   
+</button>
+
+<button>
+
+✏ Edit
+
+</button>
+
+<button>
+
+📊 Analytics
+
+</button>
+
+<button>
+
+🗑 Delete
+
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- Recent Activity -->
+
+<div class="glass activity">
+
+<h2>
+
+Recent Activity
+
+</h2>
+
+<div class="activity-list">
+
+<div class="activity-item">
+
+❤️ Rahul donated ₹500
+
+</div>
+
+<div class="activity-item">
+
+🎉 Campaign reached 75%
+
+</div>
+
+<div class="activity-item">
+
+💬 New message received
+
+</div>
+
+<div class="activity-item">
+
+👁 30 new visitors
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+<section id="profile" class="page">
+<div class="glass profile-card">
+
+<h1>
+
+👤 My Profile
+
+</h1>
+
+<p class="subtitle">
+
+Manage your GiftBloom account.
+
+</p>
+
+<!-- Basic Info -->
+
+<div class="user-info">
+
+<h2 id="profileUserName">
+
+Rahul Sharma
+
+</h2>
+
+<p id="userEmail">
+
+rahul@gmail.com
+
+</p>
+
+<p>
+
+Member Since
+
+<span id="joinDate">
+
+June 2026
+
+</span>
+
+</p>
+
+</div>
+
+<!-- Statistics -->
+
+<div class="stats-grid">
+
+<div class="stat-box">
+
+<h3 id="campaignCount">
+
+3
+
+</h3>
+
+<p>
+
+Campaigns
+
+</p>
+
+</div>
+
+<div class="stat-box">
+
+<h3 id="raisedAmount">
+
+₹12,500
+
+</h3>
+
+<p>
+
+Raised
+
+</p>
+
+</div>
+
+<div class="stat-box">
+
+<h3 id="donorCount">
+
+148
+
+</h3>
+
+<p>
+
+Donors
+
+</p>
+
+</div>
+
+<div class="stat-box">
+
+<h3 id="donationCount">
+
+18
+
+</h3>
+
+<p>
+
+Donations
+
+</p>
+
+</div>
+
+</div>
+
+<!-- Personal Details -->
+
+<h2 class="section-title">
+
+Personal Details
+
+</h2>
+<label>User ID</label>
+
+<div class="readonly-field">
+    <input
+        type="text"
+        id="userId"
+        readonly>
+
+    <button id="copyUserId">
+        📋
+    </button>
+</div>
+<label>
+
+Full Name
+
+</label>
+
+<input
+type="text"
+id="fullName">
+
+<label>
+
+Email
+
+</label>
+
+<input
+type="email"
+id="email">
+
+<label>
+
+Mobile Number
+
+</label>
+
+<input
+type="tel"
+id="mobile">
+
+<label>
+
+Date of Birth
+
+</label>
+
+<input
+type="date"
+id="dob">
+
+<label>
+
+Gender
+
+</label>
+
+<select id="gender">
+
+<option>Male</option>
+
+<option>Female</option>
+
+<option>Other</option>
+
+<option>Prefer not to say</option>
+
+</select>
+
+<label>
+
+Bio
+
+</label>
+
+<textarea
+id="bio"
+rows="4"
+placeholder="Tell everyone something about yourself...">
+
+</textarea>
+
+<!-- Account -->
+
+<h2 class="section-title">
+
+Account
+
+</h2>
+
+<div class="account-buttons">
+
+<button id="profileChangePassword">
+
+🔑 Change Password
+
+</button>
+
+<button id="verifyEmail">
+
+📧 Verify Email
+
+</button>
+
+<button id="verifyMobile">
+
+📱 Verify Mobile
+
+</button>
+
+<button id="profileLogout">
+
+🚪 Logout
+
+</button>
+
+</div>
+
+<button
+id="saveProfile"
+class="primary">
+
+💾 Save Changes
+
+</button>
+
+</div>
+</section>
+<section id="settings" class="page">
+<div class="glass settings-card">
+
+<h1>
+
+⚙ Settings
+
+</h1>
+
+<p class="subtitle">
+
+Manage your GiftBloom account preferences.
+
+</p>
+
+<!-- ACCOUNT -->
+
+<div class="setting-group">
+
+<h2>
+
+👤 Account
+
+</h2>
+
+<button id="editProfile">
+
+Edit Profile
+
+</button>
+
+<button id="settingsChangePassword">
+
+Change Password
+
+</button>
+
+<button id="changeEmail">
+
+Change Email
+
+</button>
+
+<button id="changeMobile">
+
+Change Mobile
+
+</button>
+
+</div>
+
+<!-- NOTIFICATIONS -->
+
+<div class="setting-group">
+
+<h2>
+
+🔔 Notifications
+
+</h2>
+
+<label>
+
+<input
+type="checkbox"
+id="emailNotification"
+checked>
+
+Email Notifications
+
+</label>
+
+<label>
+
+<input
+type="checkbox"
+id="donationNotification"
+checked>
+
+Donation Alerts
+
+</label>
+
+<label>
+
+<input
+type="checkbox"
+id="campaignNotification"
+checked>
+
+Campaign Updates
+
+</label>
+
+<label>
+
+<input
+type="checkbox"
+id="marketingNotification">
+
+Marketing Emails
+
+</label>
+
+</div>
+
+<!-- PREFERENCES -->
+
+<div class="setting-group">
+
+<h2>
+
+🌍 Preferences
+
+</h2>
+
+<label>
+
+Language
+
+</label>
+
+<select id="language">
+
+<option>English</option>
+
+<option>Hindi</option>
+
+<option>Bengali</option>
+
+</select>
+
+<label>
+
+Currency
+
+</label>
+
+<select id="currency">
+
+<option>₹ INR</option>
+
+<option>$ USD</option>
+
+<option>€ EUR</option>
+
+</select>
+
+</div>
+
+<!-- PRIVACY -->
+
+<div class="setting-group">
+
+<h2>
+
+🔒 Privacy
+
+</h2>
+
+<label>
+
+<input
+type="radio"
+name="privacy"
+value="public"
+checked>
+
+Public Campaigns
+
+</label>
+
+<label>
+
+<input
+type="radio"
+name="privacy"
+value="private">
+
+Private Campaigns
+
+</label>
+
+</div>
+
+<!-- DANGER -->
+
+<!-- VISIBILITY & PRIVACY -->
+<div class="setting-group">
+    <h2>👁️ Visibility Management</h2>
+    <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">Pause or hide your account without losing data.</p>
+    <button id="hideAccountBtn">Hide My Account</button>
+    <button id="hideCampaignsBtn">Hide All My Campaigns</button>
+</div>
+
+<!-- DANGER ZONE -->
+<div class="setting-group danger">
+    <h2>⚠ Danger Zone</h2>
+    <p style="font-size: 0.85rem; color: #ff4d4d; margin-bottom: 10px;">These actions are permanent and cannot be undone.</p>
+    <button id="deleteAllCampaignsBtn" style="background-color: #ffcccc; color: #cc0000; border: 1px solid #ff9999;">Delete All My Campaigns</button>
+    <button id="deleteAccountBtn" style="background-color: #ff4d4d; color: white; border: none;">Delete Account</button>
+    <button id="settingsLogout">Logout</button>
+</div>
+
+<button
+class="primary"
+id="saveSettings">
+
+💾 Save Settings
+
+</button>
+
+</div>
+</section>
+<section id="notifications" class="page">
+
+    <div class="glass notification-card">
+
+<h1>
+
+🔔 Notifications
+
+</h1>
+
+<p class="subtitle">
+
+Stay updated with every activity.
+
+</p>
+
+<!-- FILTERS -->
+
+<div class="filter-bar">
+
+<button
+class="filter active"
+data-filter="all">
+
+All
+
+</button>
+
+<button
+class="filter"
+data-filter="unread">
+
+Unread
+
+</button>
+
+<button
+class="filter"
+data-filter="donation">
+
+Donations
+
+</button>
+
+<button
+class="filter"
+data-filter="campaign">
+
+Campaigns
+
+</button>
+
+<button
+class="filter"
+data-filter="system">
+
+System
+
+</button>
+
+</div>
+
+<!-- ACTIONS -->
+
+<div class="action-bar">
+
+<button id="markAllRead">
+
+✔ Mark All Read
+
+</button>
+
+<button id="clearAll">
+
+🗑 Clear All
+
+</button>
+
+</div>
+
+<!-- LIST -->
+
+<div id="notificationList">
+
+<!-- JS Loads Here -->
+
+</div>
+
+</div>
+
+</section>
+
+
+<section id="paymentVerification" class="page">
+    <div class="glass payment-card">
+        
+        <button class="back-btn" onclick="openPage('home')">
+            ← Back to Dashboard
+        </button>
+
+        <h1>💳 Payment Verification</h1>
+        <p>Confirm payments received in your account.</p>
+        
+        <div id="paymentList">
+            </div>
+        
+    </div>
+</section>
+
+
+<section id="paymentHistory" class="page">
+
+<div class="glass payment-card">
+
+<h1>📜 Payment History</h1>
+
+<p>View all payments received for your campaigns.</p>
+
+<div class="toolbar">
+
+<input
+type="text"
+id="paymentHistorySearch"
+placeholder="Search Donation ID, Donor or Transaction ID">
+
+<select id="paymentHistoryFilter">
+
+<option value="all">All Payments</option>
+<option value="pending">Pending</option>
+<option value="verified">Verified</option>
+<option value="rejected">Rejected</option>
+
+</select>
+
+</div>
+
+<div class="table-wrapper">
+
+<table class="admin-table">
+
+<thead>
+
+<tr>
+
+<th>Donation ID</th>
+
+<th>Transaction ID</th>
+
+<th>Donor</th>
+
+<th>Campaign</th>
+
+<th>Amount</th>
+
+<th>Status</th>
+
+<th>Verified By</th>
+
+<th>Date</th>
+
+<th>Action</th>
+
+</tr>
+
+</thead>
+
+<tbody id="paymentHistoryTable">
+
+<!-- Loaded by JavaScript -->
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</section>
+
+<section id="messages" class="page">
+    <div class="glass payment-card">
+        
+        <button class="back-btn" onclick="openPage('home')">
+            ← Back to Dashboard
+        </button>
+
+        <h1>💬 Donor Messages</h1>
+        <p>Read the heartfelt wishes and notes from your supporters.</p>
+        
+        <div id="messagesList" class="messages-container">
+            </div>
+        
+    </div>
+</section>
+
+<section id="analytics" class="page">
+    <div class="glass analytics-card">
+        
+        <button class="back-btn" onclick="openPage('home')">
+            ← Back to Dashboard
+        </button>
+
+        <h1>📊 Campaign Analytics</h1>
+        <p class="subtitle">Track your campaign performance in real-time.</p>
+
+        <div class="glass selector">
+            <label>Select Campaign</label>
+            <select id="campaignSelect">
+                <option>Loading...</option>
+            </select>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-box">
+                <h3 id="totalRaised">₹0</h3>
+                <p>Raised</p>
+            </div>
+            <div class="stat-box">
+                <h3 id="totalDonors">0</h3>
+                <p>Donors</p>
+            </div>
+            <div class="stat-box">
+                <h3 id="totalViews">0</h3>
+                <p>Views</p>
+            </div>
+            <div class="stat-box">
+                <h3 id="progressPercent">0%</h3>
+                <p>Completed</p>
+            </div>
+        </div>
+
+        <div class="glass section">
+            <h2>🎯 Progress</h2>
+            <div class="progress">
+                <div class="fill" id="progressFill"></div>
+            </div>
+            <div class="progress-info">
+                <span id="raisedText">Raised ₹0</span>
+                <span id="targetText">Target ₹0</span>
+            </div>
+        </div>
+
+        <div class="glass section">
+            <h2>❤️ Donation Summary</h2>
+            <div class="summary-grid">
+                <div>
+                    <h3 id="todayDonation">₹0</h3>
+                    <p>Today</p>
+                </div>
+                <div>
+                    <h3 id="weekDonation">₹0</h3>
+                    <p>This Week</p>
+                </div>
+                <div>
+                    <h3 id="monthDonation">₹0</h3>
+                    <p>This Month</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass section">
+            <h2>🏆 Top Donors</h2>
+            <div id="topDonors">
+                </div>
+        </div>
+
+        <div class="glass section">
+            <h2>💸 Expenses</h2>
+            <div id="expenseList">
+                </div>
+        </div>
+
+        <div class="glass section">
+            <h2>📈 Insights</h2>
+            <div class="insights-grid">
+                <div>👀 <span id="viewCount">0</span> Views</div>
+                <div>📤 <span id="shareCount">0</span> Shares</div>
+                <div>❤️ <span id="likeCount">0</span> Likes</div>
+                <div>📊 <span id="conversionRate">0%</span> Conversion</div>
+            </div>
+        </div>
+
+        <div class="glass section">
+            <h2>🚦 Status</h2>
+            <p id="campaignStatus">Active</p>
+        </div>
+
+        <div class="action-buttons" style="grid-template-columns: 1fr;">
+            <button id="exportReport" onclick="alert('PDF Export feature coming soon!')">📄 Export Report</button>
+        </div>
+
+    </div>
+</section>
+
+
+<!--==========================
+     BOTTOM NAVIGATION
+===========================-->
+<nav class="bottom-nav">
+    <a href="#" onclick="openPage('home')" class="active">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-text">Home</span>
+    </a>
+    
+    <a href="allCampaigns.html">
+        <span class="nav-icon">❤️</span>
+        <span class="nav-text">All <br>Campaigns</span>
+    </a>
+    
+    <!-- Floating Center Button stays exactly the same -->
+   <a href="create.html" class="center-wrapper">
+    <div class="center">
+        ➕
+    </div>
+    <span class="center-text">Create <br>Campaign</span>
+</a>
+       <a href="#" onclick="openPage('analytics')">
+        <span class="nav-icon">📈</span>
+        <span class="nav-text">Analytics</span>
+    </a>
+    <a href="#" onclick="openPage('profile')">
+        <span class="nav-icon">👤</span>
+        <span class="nav-text">Profile</span>
+    </a>
+</nav>
+
+<script src="dashboard(combined).js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Create Campaign | GiftBloom</title>
+
+<link rel="stylesheet" href="create.css">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+
+</head>
+
+<body>
+ <script>
+        // Check if maintenance mode is active before letting the user interact
+        const siteSettings = JSON.parse(localStorage.getItem("adminSettings")) || {};
+        
+        if (siteSettings.maintenance) {
+            // Overwrite the screen UI completely
+            document.body.innerHTML = `
+                <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh; background:linear-gradient(135deg,#FFF7FB,#FFEAF4,#F8ECFF); font-family:'Poppins',sans-serif; text-align:center; padding: 20px;">
+                    <h1 style="color:#ff4d8d; font-size:45px; margin-bottom: 10px;">🛠 Site Under Maintenance</h1>
+                    <p style="color:#666; font-size:18px; max-width: 500px;">We are currently upgrading GiftBloom to serve you better. Donations are temporarily paused. Please check back shortly!</p>
+                </div>
+            `;
+            // Stop any further scripts on the frontend from executing
+            window.stop(); 
+        }
+    </script>
+<div class="hearts"></div>
+
+<header>
+
+<nav class="navbar">
+
+<div class="logo">
+💝 GiftBloom
+</div>
+
+<div class="menu-btn" id="menuBtn">
+☰
+</div>
+
+<ul id="menu">
+<li><a href="index.html">Home</a></li>
+<li><a href="allCampaigns.html">Campaigns</a></li>
+<li><a href="login.html">Login</a></li>
+<li><a class="signup" href="signup.html">Sign Up</a></li>
+</ul>
+
+</nav>
+
+</header>
+
+<section class="create-page">
+
+<div class="glass form-box">
+
+<h1>
+🎁 Create Your Campaign
+</h1>
+
+<p class="subtitle">
+Fill the details below and start collecting support.
+</p>
+
+<form id="campaignForm">
+
+<!-- Hidden Campaign ID -->
+<input type="hidden" id="campaignId">
+
+<!-- NEW: Visible, Uneditable Creator Profile ID -->
+<label class="no-asterisk">Creator Profile ID</label>
+<input type="text" id="visibleOwnerId" class="readonly-input" readonly>
+
+<label>Gift Name</label>
+<input type="text" id="giftName" placeholder="Ex : Teddy Bear">
+
+<label>Receiver Name</label>
+<input type="text" id="receiver" placeholder="Ex : Priya">
+
+<label>Your Name</label>
+<input type="text" id="creator" placeholder="Ex : Rahul">
+
+<label>Occasion</label>
+<select id="occasion">
+<option>Birthday</option>
+<option>Anniversary</option>
+<option>Valentine</option>
+<option>Wedding</option>
+<option>Festival</option>
+<option>Other</option>
+</select>
+
+<div id="otherOccasionBox" style="display:none;">
+<label>Describe Occasion</label>
+<input type="text" id="otherOccasion" placeholder="Describe the occasion">
+</div>
+
+<label>Gift Category</label>
+<select id="category">
+<option>Soft Toy</option>
+<option>Flowers</option>
+<option>Ring</option>
+<option>Chocolate</option>
+<option>Electronics</option>
+<option>Other</option>
+</select>
+
+<div id="otherCategoryBox" style="display:none;">
+<label>Describe Gift</label>
+<input type="text" id="otherCategory" placeholder="Ex : Smart Watch, Bike Helmet, Handmade Gift">
+</div>
+
+<label>Target Amount (₹)</label>
+<input type="number" id="target" placeholder="2000">
+
+<label>Target Date</label>
+<input type="date" id="targetDate">
+
+<label>Campaign Story</label>
+<textarea id="story" rows="6" placeholder="Write your campaign story..."></textarea>
+
+<!-- NEW: Message Preference Feature -->
+<label class="no-asterisk">Do you want to receive any message from the donator?</label>
+<div class="radio-group" id="receiveMsgGroup">
+    <label class="radio-label"><input type="radio" name="receiveMessages" value="yes" checked> Yes</label>
+    <label class="radio-label"><input type="radio" name="receiveMessages" value="no"> No</label>
+</div>
+
+<label>Upload Gift Image</label>
+<input type="file" id="giftImage" accept="image/*">
+
+<label>Upload Payment QR</label>
+<input type="file" id="paymentQR" accept="image/*">
+
+<button type="button" id="nextBtn" class="primary">
+Continue →
+</button>
+
+</form>
+
+</div>
+
+</section>
+
+<!-- CROPPER MODAL -->
+<div id="cropperModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; flex-direction:column; align-items:center; justify-content:center;">
+    <div style="width: 90%; max-width: 400px; background: white; padding: 20px; border-radius: 15px; text-align: center;">
+        <h3 id="cropperTitle" style="margin-bottom: 15px; color:#ff4d8d;">Crop Image</h3>
+        <div style="max-height: 50vh; overflow: hidden; border-radius:10px;">
+            <img id="imageToCrop" src="" style="max-width: 100%;">
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 20px;">
+            <button type="button" id="cancelCropBtn" style="flex:1; padding:12px 5px; border:none; border-radius:10px; background:#ddd; font-weight:bold; cursor:pointer;">Cancel</button>
+            <button type="button" id="rotateCropBtn" style="flex:1; padding:12px 5px; border:2px solid #ff4d8d; border-radius:10px; background:#fff; color:#ff4d8d; font-weight:bold; cursor:pointer;">🔄 Rotate</button>
+            <button type="button" id="applyCropBtn" style="flex:1; padding:12px 5px; border:none; border-radius:10px; background:#ff4d8d; color:white; font-weight:bold; cursor:pointer;">✂️ Apply</button>
+        </div>
+    </div>
+</div>
+
+<!-- ZOOM LIGHTBOX -->
+<div id="zoomLightbox" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:10000; align-items:center; justify-content:center; flex-direction:column;">
+    <button id="closeLightboxBtn" style="position:absolute; top:20px; right:30px; background:none; border:none; color:white; font-size:45px; font-weight:300; cursor:pointer; padding:10px;">&times;</button>
+    <img id="lightboxImg" src="" style="max-width:90%; max-height:80vh; border-radius:15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script src="create.js"></script>
+
+</body>
+</html>

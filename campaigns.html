@@ -1,0 +1,347 @@
+<!DOCTYPE>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campaign Details | GiftBloom</title>
+    <link rel="stylesheet" href="campaigns.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <script>
+        // Check if maintenance mode is active before letting the user interact
+        const siteSettings = JSON.parse(localStorage.getItem("adminSettings")) || {};
+        
+        if (siteSettings.maintenance) {
+            // Overwrite the screen UI completely
+            document.body.innerHTML = `
+                <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh; background:linear-gradient(135deg,#FFF7FB,#FFEAF4,#F8ECFF); font-family:'Poppins',sans-serif; text-align:center; padding: 20px;">
+                    <h1 style="color:#ff4d8d; font-size:45px; margin-bottom: 10px;">🛠 Site Under Maintenance</h1>
+                    <p style="color:#666; font-size:18px; max-width: 500px;">We are currently upgrading GiftBloom to serve you better. Donations are temporarily paused. Please check back shortly!</p>
+                </div>
+            `;
+            // Stop any further scripts on the frontend from executing
+            window.stop(); 
+        }
+    </script>
+    <!-- Floating Hearts Background -->
+    
+    <div class="hearts"></div>
+<!--==========================
+        CANVAS PAGE LOADER
+===========================-->
+<div id="pageLoader" class="page-loader">
+    <div class="loader-content">
+        <!-- Calligraphy Name inside the heart -->
+        <div id="loaderName" class="loader-name">Loading...</div>
+        <canvas id="loaderCanvas"></canvas>
+        <p class="loader-status">Blooming your gifts...</p>
+    </div>
+</div>
+    <!-- ===========================
+            NAVBAR (Always visible)
+    ============================ -->
+    <header>
+        <nav class="navbar">
+            <div class="logo">💝 GiftBloom</div>
+            <div class="menu-btn" id="menuBtn">☰</div>
+            <ul id="menu">
+                <li><a href="dashboard(combined).html">Home</a></li>
+                <li><a href="campaigns.html">Campaigns</a></li>
+                <li><a href="login.html">Login</a></li>
+                <li><a href="signup.html" class="signup">Sign Up</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- ===========================
+         HIDDEN CONTENT WRAPPER 
+         (Prevents the flash of fake data!)
+    ============================ -->
+    <div id="mainContent" style="display: none;">
+
+        <!-- ===========================
+              HERO SECTION
+        ============================ -->
+        <section class="campaign-hero">
+            <div class="glass hero-container">
+                <button class="back-btn">← Back</button>
+                <div class="hero-grid">
+                    
+                    <!-- Gift Image -->
+                    <div class="image-box">
+                        <img id="giftImage" src="images/teddy.jpg" alt="Gift">
+                    </div>
+
+                    <!-- Details -->
+                    <div class="details">
+                        <span class="badge">❤️ Trending</span>
+                        <h1 id="giftName">Teddy Bear</h1>
+                        <p class="receiver">For Priya ❤️</p>
+                        <p class="creator">👤 By Rahul Sharma</p>
+                        
+                        <div class="progress-info">
+                            <span>70% Funded</span>
+                            <span>₹1400 / ₹2000</span>
+                        </div>
+                        
+                        <div class="progress">
+                            <div class="fill" style="width:70%;"></div>
+                        </div>
+                        
+                        <div class="hero-stats">
+                            <div>
+                                <h3>18</h3>
+                                <p>Donors</p>
+                            </div>
+                            <div>
+                                <h3>5</h3>
+                                <p>Days Left</p>
+                            </div>
+                            <div>
+                                <h3>₹600</h3>
+                                <p>Remaining</p>
+                            </div>
+                        </div>
+                        
+                        <div id="heroActions">
+                            <button class="donate-btn" id="donateBtn">❤️ Donate Now</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===========================
+                CAMPAIGN STORY
+        ============================ -->
+        <section class="story-section">
+            <div class="glass section-card">
+                <h2>📖 Campaign Story</h2>
+                <p id="campaignStory">
+                    Hello everyone! ❤️
+                    I'm creating this campaign to surprise someone very special with a beautiful Teddy Bear on her birthday.
+                    Every contribution, whether big or small, brings me one step closer to making her smile.
+                    Thank you for being part of this wonderful surprise.
+                </p>
+            </div>
+        </section>
+
+        <!-- ===========================
+                GIFT DETAILS
+        ============================ -->
+        <section class="gift-details">
+            <div class="glass section-card">
+                <h2>🎁 Gift Information</h2>
+                <div class="details-grid">
+                    <div class="detail-box">
+                        <h4>Gift</h4>
+                        <p>Teddy Bear</p>
+                    </div>
+                    <div class="detail-box">
+                        <h4>Occasion</h4>
+                        <p>Birthday</p>
+                    </div>
+                    <div class="detail-box">
+                        <h4>Category</h4>
+                        <p>Soft Toy</p>
+                    </div>
+                    <div class="detail-box">
+                        <h4>Target Date</h4>
+                        <p>30 June 2026</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===========================
+              RECENT DONATIONS
+        ============================ -->
+        <section class="donations" id="donationSection">
+            <div class="glass section-card">
+                <h2>❤️ Recent Donations</h2>
+                <div class="donation-item">
+                    <span>Rahul</span>
+                    <strong>₹200</strong>
+                </div>
+                <div class="donation-item">
+                    <span>Anonymous</span>
+                    <strong>₹500</strong>
+                </div>
+                <div class="donation-item">
+                    <span>Priya</span>
+                    <strong>₹150</strong>
+                </div>
+                <button class="view-all">View All Donations</button>
+            </div>
+        </section>
+
+        <!-- ===========================
+                  EXPENSES
+        ============================ -->
+        <section class="expenses" id="expenseSection">
+            <div class="glass section-card">
+                <h2>💸 Expense Tracker</h2>
+                <div class="expense-item">
+                    <span>Teddy Bear</span>
+                    <strong>₹1100</strong>
+                </div>
+                <div class="expense-item">
+                    <span>Gift Wrapping</span>
+                    <strong>₹120</strong>
+                </div>
+                <div class="expense-item">
+                    <span>Delivery</span>
+                    <strong>₹180</strong>
+                </div>
+                <hr>
+                <div class="expense-item total">
+                    <span>Total Expense</span>
+                    <strong>₹1400</strong>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===========================
+                WISHES
+        ============================ -->
+        <section class="wishes">
+            <div class="glass section-card">
+                <h2>💬 Wishes & Messages</h2>
+                <div class="wish-item">
+                    <h4>Rahul ❤️</h4>
+                    <p>Happy Birthday! Hope you have an amazing day.</p>
+                </div>
+                <div class="wish-item">
+                    <h4>Anonymous</h4>
+                    <p>Wishing both of you lots of happiness.</p>
+                </div>
+                <div class="wish-item">
+                    <h4>Priya</h4>
+                    <p>Hope this surprise becomes unforgettable.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===========================
+                SHARE
+        ============================ -->
+        <section class="share">
+            <div class="glass section-card">
+                <h2>📤 Share This Campaign</h2>
+                <div class="share-buttons">
+                    <button class="share-btn whatsapp">📱 WhatsApp</button>
+                    <button class="share-btn copy">🔗 Copy Link</button>
+                    <button class="share-btn qr">📷 QR Code</button>
+                </div>
+            </div>
+        </section>
+
+      
+             <!-- ===========================
+              INSTA-STYLE DIRECT MESSAGES
+        ============================ -->
+        <section class="campaign-chat" id="chatSection" style="display:none;">
+            <div class="glass section-card" style="padding:0; overflow:hidden;">
+                
+                <div class="insta-chat-layout">
+                    <!-- Sidebar for Creator (Shows who messaged them) -->
+                    <div class="chat-sidebar" id="chatSidebar" style="display:none;">
+                        <div class="sidebar-header">
+                            <h3>Messages</h3>
+                        </div>
+                        <div class="contact-list" id="contactList">
+                            <!-- JS loads contacts here -->
+                        </div>
+                    </div>
+
+                    <!-- Chat Window (Where the actual talking happens) -->
+                    <div class="chat-main" id="chatMain">
+                        <div class="chat-header">
+                            <button id="backToContacts" style="display:none;">←</button>
+                            <div class="chat-header-info">
+                                <h3 id="chatTitle">Message Creator</h3>
+                                <p id="chatSubtitle">Campaign Name</p>
+                            </div>
+                        </div>
+                        
+                        <div class="chat-messages" id="chatMessagesList">
+                            <!-- Messages go here -->
+                        </div>
+                        
+                        <div class="chat-input-area">
+                            <input type="text" id="chatInput" placeholder="Message...">
+                            <button id="sendChatBtn">Send</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+        <!-- ===========================
+              REPORT CAMPAIGN
+        ============================ -->
+        <section class="report" id="reportSection">
+            <div class="glass section-card report-card">
+                <h2>⚠ Report Campaign</h2>
+                <p>
+                    Found something suspicious?
+                    Report this campaign and our admin
+                    will review it.
+                </p>
+                <button class="report-btn">🚨 Report</button>
+            </div>
+        </section>
+
+        <!-- ===========================
+              SIMILAR CAMPAIGNS
+        ============================ -->
+        <section class="similar">
+            <div class="title">
+                <h2>❤️ Similar Campaigns</h2>
+                <p>You may also like these campaigns.</p>
+            </div>
+            
+            <div class="campaigns">
+                <!-- JS will inject similar campaigns here -->
+                <div class="glass card">
+                    <div class="card-image">
+                        <img src="images/ring.jpg" alt="Gift">
+                    </div>
+                    <div class="content">
+                        <h3>Promise Ring</h3>
+                        <p>For Sneha ❤️</p>
+                        <button>View Campaign</button>
+                    </div>
+                </div>
+                <div class="glass card">
+                    <div class="card-image">
+                        <img src="images/flowers.jpg" alt="Gift">
+                    </div>
+                    <div class="content">
+                        <h3>Rose Bouquet</h3>
+                        <p>For Anjali ❤️</p>
+                        <button>View Campaign</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div> <!-- === END OF HIDDEN CONTENT WRAPPER === -->
+
+    <!-- ===========================
+              FOOTER
+    ============================ -->
+    <footer>
+        <p>Made with ❤️ using GiftBloom</p>
+    </footer>
+
+    <!-- Link your JS file at the bottom -->
+    <script src="campaigns.js"></script>
+
+</body>
+</html>

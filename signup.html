@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Sign Up | GiftBloom</title>
+
+<link rel="stylesheet"
+href="signup.css">
+
+<link rel="preconnect"
+href="https://fonts.googleapis.com">
+
+<link rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+rel="stylesheet">
+
+</head>
+
+<body>
+ <script>
+        // Check if maintenance mode is active before letting the user interact
+        const siteSettings = JSON.parse(localStorage.getItem("adminSettings")) || {};
+        
+        if (siteSettings.maintenance) {
+            // Overwrite the screen UI completely
+            document.body.innerHTML = `
+                <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh; background:linear-gradient(135deg,#FFF7FB,#FFEAF4,#F8ECFF); font-family:'Poppins',sans-serif; text-align:center; padding: 20px;">
+                    <h1 style="color:#ff4d8d; font-size:45px; margin-bottom: 10px;">🛠 Site Under Maintenance</h1>
+                    <p style="color:#666; font-size:18px; max-width: 500px;">We are currently upgrading GiftBloom to serve you better. Donations are temporarily paused. Please check back shortly!</p>
+                </div>
+            `;
+            // Stop any further scripts on the frontend from executing
+            window.stop(); 
+        }
+    </script>
+<div class="hearts"></div>
+
+<!-- ===========================
+        NAVBAR
+=========================== -->
+
+<header>
+
+<nav class="navbar">
+
+<div class="logo">
+💝 GiftBloom
+</div>
+
+<div id="menuBtn"
+class="menu-btn">
+☰
+</div>
+
+<ul id="menu">
+
+<li>
+<a href="index.html">
+Home
+</a>
+</li>
+
+<li>
+<a href="campaigns.html">
+Campaigns
+</a>
+</li>
+
+<li>
+<a href="login.html">
+Login
+</a>
+</li>
+
+<li>
+<a href="signup.html"
+class="signup">
+Sign Up
+</a>
+</li>
+
+</ul>
+
+</nav>
+
+</header>
+
+<!-- ===========================
+        SIGNUP
+=========================== -->
+
+<section class="signup-page">
+
+<div class="glass signup-card">
+
+<h1>
+
+Create Your Account ❤️
+
+</h1>
+
+<p class="subtitle">
+
+Join GiftBloom and start creating beautiful gift campaigns.
+
+</p>
+
+<form id="signupForm">
+    <!-- NEW: Hidden input to store the generated unique user ID -->
+    <input type="hidden" id="uniqueOwnerId">
+
+    <label>Full Name</label>
+<input
+type="text"
+id="fullName"
+placeholder="Rahul Sharma">
+
+<label>
+
+Email Address
+
+</label>
+
+<input
+type="email"
+id="email"
+placeholder="rahul@gmail.com">
+
+<label>Mobile Number</label>
+<input type="tel" id="mobile" maxlength="10" placeholder="9876543210">
+
+<label>Date of Birth</label>
+<input type="date" id="dob" required>
+
+<!-- NEW: Gender Dropdown -->
+<label>Gender</label>
+<select id="gender" required style="width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: 1px solid rgba(255, 77, 141, 0.2); font-family: 'Poppins', sans-serif; font-size: 14px; outline: none; background: rgba(255, 255, 255, 0.7);">
+    <option value="" disabled selected>Select Gender</option>
+    <option value="Male">Male</option>
+    <option value="Female">Female</option>
+    <option value="Others">Others</option>
+</select>
+
+
+<label>Password</label>
+<div class="password-box">
+    <input type="password" id="password" placeholder="Create Password">
+    <button type="button" class="toggle" data-target="password">👁</button>
+</div>
+
+<label>Confirm Password</label>
+<div class="password-box">
+    <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+    <button type="button" class="toggle" data-target="confirmPassword">👁</button>
+</div>
+
+<p id="passwordMatchMsg" style="font-size: 13px; font-weight: 600; margin-top: 8px; display: none;"></p>
+
+
+<div class="password-strength">
+
+<div id="strengthBar">
+
+</div>
+
+</div>
+
+<p id="strengthText">
+
+Password Strength
+
+</p>
+
+<label class="terms">
+
+<input
+type="checkbox"
+id="agree">
+
+<span>
+
+I agree to the
+
+<a href="#">
+
+Terms & Conditions
+
+</a>
+
+and
+
+<a href="#">
+
+Privacy Policy
+
+</a>
+
+</span>
+
+</label>
+
+<button
+type="submit"
+class="primary">
+
+Create Account
+
+</button>
+
+</form>
+
+<div class="divider">
+
+<span>
+
+OR
+
+</span>
+
+</div>
+
+<button
+id="googleSignup"
+class="google-btn">
+
+<img
+src="images/google.png"
+alt="Google">
+
+Continue with Google
+
+</button>
+
+<p class="bottom-text">
+
+Already have an account?
+
+<a href="login.html">
+
+Login
+
+</a>
+
+</p>
+
+</div>
+
+</section>
+<!-- Official Google Identity Script -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="signup.js"></script>
+
+</body>
+
+</html>

@@ -1595,6 +1595,7 @@ return new Date(date)
 function refreshDashboard(){
 loadDashboard();
 loadUsers();
+loadActivity();
 loadCampaigns();
 loadDonations();
 loadReports();

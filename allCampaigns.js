@@ -165,10 +165,22 @@ function renderCampaigns() {
         if (c.adminStatus === "Approved") {
             adminBadge = `<span class="badge" style="background:#e3fcef; color:#0b8a38; border:1px solid #0b8a38; margin-left:8px;">✅ Verified</span>`;
         }
+        
+ // 👉 GOOGLE DRIVE IMAGE FIX (Matching campaign.js exactly)
+        let displayImage = 'images/teddy.jpg'; // Default fallback
 
+        if (campaign.giftImageUrl && campaign.giftImageUrl.trim() !== "") {
+            displayImage = campaign.giftImageUrl.trim();
+
+            // Convert 'uc?id=' to a web-safe thumbnail URL
+            if (displayImage.includes("drive.google.com/uc?id=")) {
+                let fileId = displayImage.split("id=")[1].split("&")[0]; // Extract the ID safely
+                displayImage = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w1000";
+            }
+        }
         container.innerHTML += `
         <div class="card">
-            <img src="${c.image || 'images/default.jpg'}" alt="Campaign Image">
+             <img src="${displayImage}" alt="Gift" onerror="this.onerror=null; this.src='images/teddy.jpg';">
             
             <div style="margin:10px 0; display:flex; justify-content:space-between; align-items:center;">
                 <div>

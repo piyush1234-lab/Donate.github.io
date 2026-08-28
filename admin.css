@@ -197,7 +197,7 @@ padding:25px;
 height:calc(100vh - 150px);
 position:sticky;
 top:120px;
-
+overflow-y: auto;
 }
 
 .sidebar ul{

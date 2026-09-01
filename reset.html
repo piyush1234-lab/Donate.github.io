@@ -113,9 +113,9 @@ resetToken = token;
 
             try {
                 const response = await fetch(API_URL, {
-                    method: "POST",
-                    body: JSON.stringify({ action: "updatePassword", data: { token: resetToken, newPassword: newPassword } })
-                });
+    method: "POST",
+    body: JSON.stringify({ action: "updatePassword", data: { token: resetToken, newPassword: newPass.value } })
+});
 
                 const result = await response.json();
 

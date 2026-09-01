@@ -38,6 +38,7 @@
     </section>
 
     <script>
+        
         /*=====================================
               FLOATING HEARTS
         =====================================*/
@@ -56,8 +57,10 @@
         /*=====================================
               TOKEN VERIFICATION
         =====================================*/
+        let resetToken = "";
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');
+resetToken = token;
 
         if(!token) {
             alert("Invalid or missing password reset link. Please request a new one.");
@@ -90,8 +93,7 @@
 
         /*=====================================
               SUBMIT NEW PASSWORD
-        =====================================*/
-        document.getElementById("newPasswordForm").addEventListener("submit", async (e) => {
+        =====================================*/ document.getElementById("newPasswordForm").addEventListener("submit", async (e) => {
             e.preventDefault();
             
             if (newPass.value !== confirmPass.value) {
@@ -126,11 +128,9 @@
                     saveBtn.disabled = false;
                 }
             } catch (error) {
-                alert("DEBUG: " + error.message);
-                console.error("Reset password error:", error);
-                saveBtn.innerHTML = "Save New Password";
-                saveBtn.disabled = false;
-            }
+    alert("❌ Something went wrong. Please try again or request a new reset link.");
+    console.error("Reset password error:", error);
+}
         });
     </script>
 </body>

@@ -107,18 +107,12 @@
             saveBtn.innerHTML = "Saving... ⏳";
             saveBtn.disabled = true;
 
-            const API_URL = "https://script.google.com/macros/s/AKfycbz3j7pEIhMfam_dVATTNJe6rHAaMNUAz55ywLqEj4XDJ5qb6hygrvGQQfSj2x1KLtRM/exec";
+            const API_URL = "https://script.google.com/macros/s/AKfycbxyVajhdo-ZT_N5px_hqM2fFWNqpAu3yw6YRZDhK0_3jQ_eLdzKYhnvyfeQyxuGP_jS/exec";
 
             try {
                 const response = await fetch(API_URL, {
                     method: "POST",
-                    body: JSON.stringify({
-                        action: "updatePassword",
-                        data: {
-                            token: token,
-                            newPassword: newPass.value
-                        }
-                    })
+                    body: JSON.stringify({ token: token, password: newPass.value })
                 });
 
                 const result = await response.json();
@@ -132,7 +126,8 @@
                     saveBtn.disabled = false;
                 }
             } catch (error) {
-                alert("❌ Network error. Try again.");
+                alert("DEBUG: " + error.message);
+                console.error("Reset password error:", error);
                 saveBtn.innerHTML = "Save New Password";
                 saveBtn.disabled = false;
             }

@@ -1,24 +1,16 @@
 /*=====================================
-      API ENDPOINT
+      API ENDPOINT & AUTH
 =====================================*/
 const API_URL = "https://script.google.com/macros/s/AKfycbxyVajhdo-ZT_N5px_hqM2fFWNqpAu3yw6YRZDhK0_3jQ_eLdzKYhnvyfeQyxuGP_jS/exec";
 
-// Put this on public pages (e.g., campaign.html)
 const currentUser = JSON.parse(localStorage.getItem("currentUser"));
 const isLoggedIn = currentUser && (currentUser.userId || currentUser.id);
 
-if (isLoggedIn) {
-    // Show "Go to Dashboard" button in navbar
-} else {
-    // Show "Log In / Sign Up" button in navbar
-}
-
-
 /*=====================================
-      CANVAS PARTICLE HEART LOADER
+      OPTIMIZED CANVAS LOADER
 =====================================*/
 const loaderCanvas = document.getElementById('loaderCanvas');
-let loaderAnimId;
+let loaderAnimId = null;
 
 if (loaderCanvas) {
     const ctx = loaderCanvas.getContext('2d');
@@ -27,8 +19,7 @@ if (loaderCanvas) {
     const cx = cw / 2;
     const cy = ch / 2 - 20;
 
-    // --- Dynamic Name Logic ---
-    const loggedInUser = ""; // e.g., "Sarah"
+    const loggedInUser = currentUser?.name || "";
     const nameEl = document.getElementById('loaderName');
     if (nameEl) {
         nameEl.textContent = loggedInUser ? loggedInUser : "Loading...";
@@ -38,24 +29,22 @@ if (loaderCanvas) {
     const hpx = new Float32Array(HEART_RES);
     const hpy = new Float32Array(HEART_RES);
 
-    // Generate mathematical heart boundaries
     for (let i = 0; i < HEART_RES; i++) {
         const t = (i / HEART_RES) * Math.PI * 2;
         hpx[i] = 16 * Math.pow(Math.sin(t), 3);
         hpy[i] = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
     }
 
-    const N = 350; 
+    const N = 200; // Optimized particle count for smooth 60fps
     const particles = [];
-    const colors = ['#ff4d8d', '#4740ff', '#ff1493', '#ff84b7', '#ffb3d9', '#ff40a8']; 
+    const colors = ['#ff4d8d', '#ff2b74d', '#4740ff', '#ff1493', '#ff84b7', '#ffb3d9', '#ff40a8'];
 
-    // Start particles from center
     for (let i = 0; i < N; i++) {
         particles.push({
-            x: cx, 
-            y: cy, 
-            vx: (Math.random() - 0.5) * 15, 
-            vy: (Math.random() - 0.5) * 15, 
+            x: cx,
+            y: cy,
+            vx: (Math.random() - 0.5) * 15,
+            vy: (Math.random() - 0.5) * 15,
             size: Math.random() * 1.2 + 0.8,
             targetIndex: (i * 7) % HEART_RES,
             color: colors[Math.floor(Math.random() * colors.length)],
@@ -64,60 +53,44 @@ if (loaderCanvas) {
     }
 
     function animateLoader(time) {
-        // Transparent trail trick
         ctx.globalCompositeOperation = 'destination-out';
         ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
         ctx.fillRect(0, 0, cw, ch);
 
-        // Switch to glowing blend mode for particles
         ctx.globalCompositeOperation = 'lighter';
 
         const cycle = (time * 0.0013) % 1;
         let pulse = 0;
         if (cycle < 0.12) pulse = Math.sin((cycle / 0.12) * Math.PI);
         else if (cycle > 0.18 && cycle < 0.35) pulse = 0.5 * Math.sin(((cycle - 0.18) / 0.17) * Math.PI);
-        const hs = 2.25 * (1 + pulse * 0.15); 
+        const hs = 2.25 * (1 + pulse * 0.15);
 
-        // The active index travels from 0 to 256 around the heart path
-        // Adjust the "0.15" multiplier to change the speed of the traveling light
-        const activeIndex = (time * 0.10) % HEART_RES; 
+        const activeIndex = (time * 0.10) % HEART_RES;
 
         for (let i = 0; i < N; i++) {
             let p = particles[i];
             let tx = cx + hpx[p.targetIndex] * hs;
             let ty = cy + hpy[p.targetIndex] * hs;
 
-            p.vx += (tx - p.x) * 0.08; 
+            p.vx += (tx - p.x) * 0.08;
             p.vy += (ty - p.y) * 0.08;
-
             p.vx += Math.sin(time * 0.002 + p.offsetT) * 0.03;
             p.vy += Math.cos(time * 0.002 + p.offsetT) * 0.03;
-
-            p.vx *= 0.75; 
+            p.vx *= 0.75;
             p.vy *= 0.75;
-
             p.x += p.vx;
             p.y += p.vy;
 
             ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-
-            // Calculate how close this particle is to the traveling light
             let diff = (activeIndex - p.targetIndex + HEART_RES) % HEART_RES;
 
-            // If the particle is within 25 steps behind the active light index, illuminate it!
             if (diff < 25) {
-                // Fades out from 1 at the head, to 0 at the tail
-                const intensity = 1 - (diff / 25); 
-
-                ctx.fillStyle = '#ff4d8d '; // White core for the light
-                ctx.shadowBlur = 15 * intensity; 
-                ctx.shadowColor = '#ff4d8d'; // Main pink glow
+                const intensity = 1 - (diff / 25);
+                ctx.arc(p.x, p.y, p.size * (1 + intensity * 0.6), 0, Math.PI * 2);
+                ctx.fillStyle = '#ff2b74';
                 ctx.fill();
-
-                ctx.shadowBlur = 0; // Reset for other particles
             } else {
-                // Draw normal unlit particle
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
                 ctx.fillStyle = p.color;
                 ctx.fill();
             }
@@ -125,9 +98,20 @@ if (loaderCanvas) {
 
         loaderAnimId = requestAnimationFrame(animateLoader);
     }
-    loaderAnimId = requestAnimationFrame(animateLoader);
-}
 
+    window.startLoaderCanvas = function () {
+        if (!loaderAnimId) {
+            loaderAnimId = requestAnimationFrame(animateLoader);
+        }
+    };
+
+    window.stopLoaderCanvas = function () {
+        if (loaderAnimId) {
+            cancelAnimationFrame(loaderAnimId);
+            loaderAnimId = null;
+        }
+    };
+}
 
 /*=====================================
         DYNAMIC AUTH MENU
@@ -154,33 +138,22 @@ function updateNavbar() {
         `;
     }
 }
-
 updateNavbar();
 
 /*=====================================
-        MOBILE MENU
+        MOBILE MENU & INTERACTIONS
 =====================================*/
 const menuBtn = document.getElementById("menuBtn");
 const menu = document.getElementById("menu");
 
 if (menuBtn && menu) {
-    menuBtn.addEventListener("click", () => {
-        menu.classList.toggle("show");
-    });
+    menuBtn.addEventListener("click", () => menu.classList.toggle("show"));
 }
 
-/*=====================================
-      CLOSE MENU ON LINK CLICK
-=====================================*/
 document.querySelectorAll("#menu a").forEach(link => {
-    link.addEventListener("click", () => {
-        if (menu) menu.classList.remove("show");
-    });
+    link.addEventListener("click", () => menu?.classList.remove("show"));
 });
 
-/*=====================================
-    CLOSE MENU WHEN CLICK OUTSIDE
-=====================================*/
 document.addEventListener("click", (e) => {
     if (menu && menuBtn && !menu.contains(e.target) && !menuBtn.contains(e.target)) {
         menu.classList.remove("show");
@@ -188,108 +161,62 @@ document.addEventListener("click", (e) => {
 });
 
 /*=====================================
-      PROGRESS BAR ANIMATION
+      INTERSECTION OBSERVERS
 =====================================*/
 const progressBars = document.querySelectorAll(".fill");
-
 const progressObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
             const bar = entry.target;
             const width = bar.style.width;
-
             bar.style.width = "0%";
-
-            setTimeout(() => {
-                bar.style.width = width;
-            }, 150);
-
+            setTimeout(() => { bar.style.width = width; }, 150);
             progressObserver.unobserve(bar);
         }
     });
 }, { threshold: 0.5 });
-
 progressBars.forEach(bar => progressObserver.observe(bar));
 
-/*=====================================
-      SCROLL REVEAL
-=====================================*/
 const reveals = document.querySelectorAll(".card, .step, .stat, .cta-box");
-
-const revealObserver = new IntersectionObserver((entries)=>{
-    entries.forEach(entry=>{
-        if(entry.isIntersecting){
-            entry.target.style.opacity="1";
-            entry.target.style.transform="translateY(0)";
+const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.style.opacity = "1";
+            entry.target.style.transform = "translateY(0)";
         }
     });
 }, { threshold: 0.15 });
 
-reveals.forEach(item=>{
-    item.style.opacity="0";
-    item.style.transform="translateY(40px)";
-    item.style.transition=".7s ease";
+reveals.forEach(item => {
+    item.style.opacity = "0";
+    item.style.transform = "translateY(40px)";
+    item.style.transition = ".7s ease";
     revealObserver.observe(item);
 });
 
 /*=====================================
-        BUTTON RIPPLE
+        BUTTON RIPPLE & TILT
 =====================================*/
-document.querySelectorAll("button").forEach(btn=>{
-    btn.addEventListener("click",function(e){
-        const ripple=document.createElement("span");
-        ripple.className="ripple";
-
-        const rect=this.getBoundingClientRect();
-        ripple.style.left=e.clientX-rect.left+"px";
-        ripple.style.top=e.clientY-rect.top+"px";
-
+document.querySelectorAll("button").forEach(btn => {
+    btn.addEventListener("click", function (e) {
+        const ripple = document.createElement("span");
+        ripple.className = "ripple";
+        const rect = this.getBoundingClientRect();
+        ripple.style.left = e.clientX - rect.left + "px";
+        ripple.style.top = e.clientY - rect.top + "px";
         this.appendChild(ripple);
-
-        setTimeout(()=>{
-            ripple.remove();
-        },600);
+        setTimeout(() => ripple.remove(), 600);
     });
 });
 
-/*=====================================
-      HERO FLOAT
-=====================================*/
-const gift=document.querySelector(".gift");
-if (gift) {
-    let angle=0;
-    setInterval(()=>{
-        angle+=0.02;
-        gift.style.transform= `translateY(${Math.sin(angle)*8}px) rotate(${Math.sin(angle)*4}deg)`;
-    }, 30);
-}
-
-/*=====================================
-      SMOOTH SCROLL
-=====================================*/
-document.querySelectorAll('a[href^="#"]').forEach(anchor=>{
-    anchor.addEventListener("click",function(e){
-        const target=document.querySelector(this.getAttribute("href"));
-        if(target){
-            e.preventDefault();
-            target.scrollIntoView({ behavior:"smooth" });
-        }
-    });
-});
-
-/*=====================================
-        CARD TILT
-=====================================*/
 function initCardTilt() {
     document.querySelectorAll(".card").forEach(card => {
         card.addEventListener("mousemove", (e) => {
             const rect = card.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
-
             const rotateY = (x - rect.width / 2) / 20;
             const rotateX = (rect.height / 2 - y) / 20;
-
             card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-8px)`;
         });
 
@@ -300,7 +227,7 @@ function initCardTilt() {
 }
 
 /*=====================================
-      NAVBAR SCROLL EFFECT
+      NAVBAR & HEARTS ANIMATION
 =====================================*/
 const navbar = document.querySelector(".navbar");
 if (navbar) {
@@ -317,19 +244,16 @@ if (navbar) {
     });
 }
 
-/*=====================================
-      BACKGROUND HEARTS
-=====================================*/
 const heartsContainer = document.querySelector(".hearts");
 if (heartsContainer) {
-    for(let i=0; i<18; i++){
-        let heart=document.createElement("div");
-        heart.className="heart";
-        heart.innerHTML="❤";
-        heart.style.left=Math.random()*100+"vw";
-        heart.style.animationDuration= 8+Math.random()*8+"s";
-        heart.style.animationDelay= Math.random()*5+"s";
-        heart.style.fontSize= 10+Math.random()*18+"px";
+    for (let i = 0; i < 18; i++) {
+        let heart = document.createElement("div");
+        heart.className = "heart";
+        heart.innerHTML = "❤";
+        heart.style.left = Math.random() * 100 + "vw";
+        heart.style.animationDuration = 8 + Math.random() * 8 + "s";
+        heart.style.animationDelay = Math.random() * 5 + "s";
+        heart.style.fontSize = 10 + Math.random() * 18 + "px";
         heartsContainer.appendChild(heart);
     }
 }
@@ -342,9 +266,8 @@ function animateCounters() {
     counters.forEach(counter => {
         let target = +counter.dataset.target;
         let count = 0;
-
-        let speed = target / 60; 
-        if (speed < 1 && target > 0) speed = 1; 
+        let speed = target / 60;
+        if (speed < 1 && target > 0) speed = 1;
 
         let update = () => {
             count += speed;
@@ -352,23 +275,14 @@ function animateCounters() {
                 counter.innerText = Math.ceil(count);
                 requestAnimationFrame(update);
             } else {
-                counter.innerText = target; 
+                counter.innerText = target;
             }
-        }
+        };
 
-        if(target > 0) {
-            update();
-        } else {
-            counter.innerText = "0";
-        }
+        if (target > 0) update();
+        else counter.innerText = "0";
     });
 }
-
-
-/*=====================================
-      LOAD DATABASE CAMPAIGNS & STATS
-=====================================*/
-let waitingForNetwork = false;
 
 /*=====================================
       LOAD DATABASE CAMPAIGNS & STATS
@@ -387,19 +301,15 @@ async function fetchHomepageData(isReload = false) {
     };
 
     if (isReload) {
-        // Button click — never show the heart loader
         startSpin();
     } else {
         const hasVisitedBefore = sessionStorage.getItem("giftbloomVisited") === "true";
 
-        if (hasVisitedBefore) {
-            // 2nd+ page load this session — show the heart loader
-            if (loader) {
-                loader.style.display = "flex";
-                loader.classList.remove("fade-out");
-            }
+        if (hasVisitedBefore && loader) {
+            loader.style.display = "flex";
+            loader.classList.remove("fade-out");
+            if (typeof window.startLoaderCanvas === "function") window.startLoaderCanvas();
         } else {
-            // First-ever entry this session — skip loader, just mark visited
             sessionStorage.setItem("giftbloomVisited", "true");
         }
 
@@ -408,9 +318,12 @@ async function fetchHomepageData(isReload = false) {
         }
     }
 
+    // Yield control to let browser render loader UI immediately before fetching
+    await new Promise(r => setTimeout(r, 20));
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
-    const minSpinTime = new Promise(res => setTimeout(res, 700));
+    const minSpinTime = new Promise(res => setTimeout(res, 500));
 
     try {
         const [response] = await Promise.all([
@@ -439,26 +352,31 @@ async function fetchHomepageData(isReload = false) {
             ? "Server is taking too long. Please try again."
             : "Network error. Please try again.";
 
-        if (campaignsContainer) campaignsContainer.innerHTML = `
-    <p style="text-align:center; color: #666;">
-        ${errorMsg}
-        <button onclick="triggerReload()" id="reloadIcon" class="reload-btn" title="Try Again">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff4d8d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 12a9 9 0 1 1-2.64-6.36" />
-                <polyline points="21 3 21 9 15 9" />
-            </svg>
-        </button>
-    </p>`;
+        if (campaignsContainer) {
+            campaignsContainer.innerHTML = `
+                <p style="text-align:center; color: #666; grid-column: 1/-1;">
+                    ${errorMsg}
+                    <button onclick="triggerReload()" id="reloadIcon" class="reload-btn" title="Try Again">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff4d8d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+                            <polyline points="21 3 21 9 15 9" />
+                        </svg>
+                    </button>
+                </p>`;
+        }
     } finally {
         stopSpin();
         if (loader && loader.style.display !== "none") {
             loader.classList.add("fade-out");
-            setTimeout(() => { loader.style.display = "none"; }, 600);
+            setTimeout(() => {
+                loader.style.display = "none";
+                if (typeof window.stopLoaderCanvas === "function") window.stopLoaderCanvas();
+            }, 600);
         }
     }
 }
 
-window.triggerReload = function() {
+window.triggerReload = function () {
     fetchHomepageData(true);
 };
 
@@ -494,21 +412,18 @@ function calculateAndRenderStats(allCampaigns) {
     if (statRaised) statRaised.dataset.target = totalRaised;
     if (statCompleted) statCompleted.dataset.target = totalCompleted;
 
-    // Trigger animation only after data is mapped
     animateCounters();
 }
 
 /*=====================================
       RENDER TRENDING CARDS (TOP 10)
 =====================================*/
-function renderTrendingCampaigns(campaigns) {
-    const activeCampaigns = campaigns.filter(c => c.status === "Active");
-  1  // ...continue using activeCampaigns instead of campaigns for the rest of the function
+function renderTrendingCampaigns(campaigns, containerElement) {
+    const container = containerElement || document.getElementById("trendingCampaigns");
+    if (!container) return;
 
-    // 2. Sort by highest number of donors to make it truly "Trending"
+    let activeCampaigns = campaigns.filter(c => c.status === "Active");
     activeCampaigns.sort((a, b) => (Number(b.donorsCount) || 0) - (Number(a.donorsCount) || 0));
-
-    // 3. Slice to only keep the top 10 campaigns
     activeCampaigns = activeCampaigns.slice(0, 10);
 
     container.innerHTML = "";
@@ -516,7 +431,7 @@ function renderTrendingCampaigns(campaigns) {
     if (activeCampaigns.length === 0) {
         container.innerHTML = `
             <div class="glass" style="padding: 40px; text-align: center; grid-column: 1 / -1;">
-                <h3 style="color: #ff4d8d; font-size: 24px; margin-bottom: 10px;">No Campaigns Alive 😔</h3>
+                <h3 style="color: #ff4d8d; font-size: 24px; margin-bottom: 10px;">No Active Campaigns 😔</h3>
                 <p style="color: #666;">Be the first one to create a beautiful memory!</p>
                 <button class="primary" style="max-width: 200px; margin-top: 20px;" onclick="window.location.href='create.html'">
                     ➕ Create Now
@@ -533,15 +448,11 @@ function renderTrendingCampaigns(campaigns) {
         let percent = target > 0 ? Math.round((raised / target) * 100) : 0;
         if (percent > 100) percent = 100;
 
-                // 👉 GOOGLE DRIVE IMAGE FIX (Matching campaign.js exactly)
-        let displayImage = 'images/teddy.jpg'; // Default fallback
-
+        let displayImage = 'images/teddy.jpg';
         if (campaign.giftImageUrl && campaign.giftImageUrl.trim() !== "") {
             displayImage = campaign.giftImageUrl.trim();
-
-            // Convert 'uc?id=' to a web-safe thumbnail URL
             if (displayImage.includes("drive.google.com/uc?id=")) {
-                let fileId = displayImage.split("id=")[1].split("&")[0]; // Extract the ID safely
+                let fileId = displayImage.split("id=")[1].split("&")[0];
                 displayImage = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w1000";
             }
         }
@@ -550,7 +461,6 @@ function renderTrendingCampaigns(campaigns) {
         <div class="glass card">
             <div class="card-image">
                 <img src="${displayImage}" alt="Gift" onerror="this.onerror=null; this.src='images/teddy.jpg';">
-
                 <div class="badge">❤️ Trending</div>
             </div>
             <div class="content">
@@ -584,10 +494,9 @@ function renderTrendingCampaigns(campaigns) {
 
     if (typeof initCardTilt === "function") initCardTilt();
 }
-// Trigger the database fetch immediately when the page loads
+
+// Trigger initial homepage data fetch
 fetchHomepageData();
-
-
 
 /*=====================================
           GEMINI CHATBOT API
@@ -599,9 +508,7 @@ const chatBody = document.getElementById("chatBody");
 const chatInput = document.getElementById("chatInput");
 const sendChat = document.getElementById("sendChat");
 
-let chatHistory = []; // ← ADD THIS LINE
-
-// ⚠️ Duplicate toggle event listener removed from here!
+let chatHistory = [];
 
 if (closeChat && chatbotWindow) {
     closeChat.addEventListener("click", () => {
@@ -609,7 +516,6 @@ if (closeChat && chatbotWindow) {
     });
 }
 
-// Helper Function: Append Messages
 function appendMessage(text, sender) {
     const msgDiv = document.createElement("div");
     msgDiv.classList.add("message", sender === "user" ? "user-message" : "bot-message");
@@ -618,14 +524,8 @@ function appendMessage(text, sender) {
     chatBody.scrollTop = chatBody.scrollHeight;
 }
 
-/*=====================================
-      AI CHATBOT HELPER FUNCTIONS
-=====================================*/
-
-// 1. Shows initial clickable chips when the chat opens
 function showStarterSuggestions() {
-    if (chatHistory.length > 0) return; // Don't show if they are already chatting
-
+    if (chatHistory.length > 0) return;
     const starters = [
         "Suggest a birthday gift! 🎂",
         "How do I create a campaign? 🤔",
@@ -634,20 +534,17 @@ function showStarterSuggestions() {
     appendActionButtons(starters);
 }
 
-// 2. Removes hidden action tags from the AI's response text
 function stripActionsTag(text) {
     if (!text) return "";
     return text.replace(/\[ACTIONS:.*?\]/gi, '').trim();
 }
 
-// 3. Detects hidden action tags to turn into clickable buttons
 function detectSuggestedActions(text) {
     if (!text) return [];
     const matches = [...text.matchAll(/\[ACTIONS:(.*?)\]/gi)];
     return matches.map(m => m[1].trim());
 }
 
-// 4. Creates and appends the clickable suggestion buttons to the chat
 function appendActionButtons(actions) {
     if (!actions || actions.length === 0) return;
 
@@ -664,20 +561,19 @@ function appendActionButtons(actions) {
         btn.style.padding = "6px 12px";
         btn.style.borderRadius = "15px";
         btn.style.border = "1px solid #ff4d8d";
-        btn.style.background = "#fff0f5"; // Light pink background
+        btn.style.background = "#fff0f5";
         btn.style.color = "#ff4d8d";
         btn.style.cursor = "pointer";
         btn.style.fontSize = "13px";
         btn.style.transition = "0.2s";
 
-        // Add hover effect
         btn.onmouseover = () => btn.style.background = "#ffe6ef";
         btn.onmouseout = () => btn.style.background = "#fff0f5";
 
         btn.onclick = () => {
-            chatInput.value = action.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, ''); // Removes emojis from input box
+            chatInput.value = action.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '');
             handleChatSend();
-            container.remove(); // Hide buttons after clicking
+            container.remove();
         };
         container.appendChild(btn);
     });
@@ -685,7 +581,6 @@ function appendActionButtons(actions) {
     chatBody.appendChild(container);
     chatBody.scrollTop = chatBody.scrollHeight;
 }
-
 
 async function fetchGeminiResponse(userText) {
     const loadingDiv = document.createElement("div");
@@ -697,11 +592,8 @@ async function fetchGeminiResponse(userText) {
     try {
         const response = await fetch(API_URL, {
             method: "POST",
-            // ✅ CORS Fix: Headers and redirect added back
-            headers: {
-                "Content-Type": "text/plain;charset=utf-8",
-            },
-            redirect: "follow", 
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            redirect: "follow",
             body: JSON.stringify({
                 action: "askAI",
                 data: { userText: userText, history: chatHistory }
@@ -710,10 +602,10 @@ async function fetchGeminiResponse(userText) {
         const result = await response.json();
         loadingDiv.remove();
 
-       if (result.status === "Success") {
-    const cleanReply = stripActionsTag(result.data.reply);
-    appendMessage(cleanReply, "bot");
-    appendActionButtons(detectSuggestedActions(result.data.reply));
+        if (result.status === "Success") {
+            const cleanReply = stripActionsTag(result.data.reply);
+            appendMessage(cleanReply, "bot");
+            appendActionButtons(detectSuggestedActions(result.data.reply));
 
             chatHistory.push({ role: "user", text: userText });
             chatHistory.push({ role: "model", text: result.data.reply });
@@ -729,7 +621,6 @@ async function fetchGeminiResponse(userText) {
     }
 }
 
-// Handle Send Action
 function handleChatSend() {
     const text = chatInput.value.trim();
     if (text === "") return;
@@ -742,17 +633,13 @@ function handleChatSend() {
 if (sendChat && chatInput) {
     sendChat.addEventListener("click", handleChatSend);
     chatInput.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") {
-            handleChatSend();
-        }
+        if (e.key === "Enter") handleChatSend();
     });
 }
 
 /*=====================================
-      FESTIVAL DATA (calendar-bharat, free/no-key)
+      FESTIVAL DATA & LOCATION
 =====================================*/
-
-// Fixed-date national days — never shift, so no need to depend on the API for these
 const FIXED_NATIONAL_DAYS = {
     "01-26": "Happy Republic Day! 🇮🇳",
     "08-15": "Happy Independence Day! 🇮🇳",
@@ -760,38 +647,33 @@ const FIXED_NATIONAL_DAYS = {
     "12-25": "Merry Christmas! 🎄",
 };
 
-// Regional festivals — festival name → states that celebrate it.
-// National/lunar festivals not in this map (Diwali, Holi, Dussehra, etc.)
-// show to everyone automatically.
 const REGIONAL_FESTIVALS = {
-    "Durga Puja":        ["West Bengal", "Tripura", "Assam", "Odisha"],
-    "Kali Puja":         ["West Bengal"],
-    "Poila Boishakh":    ["West Bengal"],
-    "Ganesh Chaturthi":  ["Maharashtra", "Goa", "Karnataka", "Telangana"],
-    "Gudi Padwa":        ["Maharashtra"],
-    "Teej":              ["Rajasthan"],
-    "Hartalika Teej":    ["Rajasthan"],
-    "Kajari Teej":       ["Rajasthan"],
-    "Gangaur":           ["Rajasthan"],
-    "Navratri":          ["Gujarat"],
-    "Garba":             ["Gujarat"],
-    "Onam":              ["Kerala"],
-    "Vishu":             ["Kerala"],
-    "Pongal":            ["Tamil Nadu"],
-    "Bihu":              ["Assam"],
-    "Baisakhi":          ["Punjab"],
-    "Lohri":             ["Punjab", "Haryana", "Himachal Pradesh"],
-    "Bathukamma":        ["Telangana"],
-    "Bonalu":            ["Telangana"],
-    "Chhath Puja":       ["Bihar", "Jharkhand", "Uttar Pradesh"],
-    "Rath Yatra":        ["Odisha"],
-    "Nuakhai":           ["Odisha"],
+    "Durga Puja": ["West Bengal", "Tripura", "Assam", "Odisha"],
+    "Kali Puja": ["West Bengal"],
+    "Poila Boishakh": ["West Bengal"],
+    "Ganesh Chaturthi": ["Maharashtra", "Goa", "Karnataka", "Telangana"],
+    "Gudi Padwa": ["Maharashtra"],
+    "Teej": ["Rajasthan"],
+    "Hartalika Teej": ["Rajasthan"],
+    "Kajari Teej": ["Rajasthan"],
+    "Gangaur": ["Rajasthan"],
+    "Navratri": ["Gujarat"],
+    "Garba": ["Gujarat"],
+    "Onam": ["Kerala"],
+    "Vishu": ["Kerala"],
+    "Pongal": ["Tamil Nadu"],
+    "Bihu": ["Assam"],
+    "Baisakhi": ["Punjab"],
+    "Lohri": ["Punjab", "Haryana", "Himachal Pradesh"],
+    "Bathukamma": ["Telangana"],
+    "Bonalu": ["Telangana"],
+    "Chhath Puja": ["Bihar", "Jharkhand", "Uttar Pradesh"],
+    "Rath Yatra": ["Odisha"],
+    "Nuakhai": ["Odisha"],
     "Hornbill Festival": ["Nagaland"],
-    "Losar":             ["Sikkim"],
+    "Losar": ["Sikkim"],
 };
 
-// Match calendar-bharat's event name against our regional map,
-// using substring matching since naming varies ("Teej" vs "Hartalika Teej")
 function findRegionalMatch(eventName) {
     const key = Object.keys(REGIONAL_FESTIVALS).find(name =>
         eventName.toLowerCase().includes(name.toLowerCase()) ||
@@ -802,14 +684,9 @@ function findRegionalMatch(eventName) {
 
 async function getTodaysFestival(userState) {
     const now = new Date();
-
-    // 1. Check fixed national days first (no API needed)
     const fixedKey = `${now.getMonth() + 1}-${now.getDate()}`;
-    if (FIXED_NATIONAL_DAYS[fixedKey]) {
-        return FIXED_NATIONAL_DAYS[fixedKey];
-    }
+    if (FIXED_NATIONAL_DAYS[fixedKey]) return FIXED_NATIONAL_DAYS[fixedKey];
 
-    // 2. Fetch (or use cached) calendar-bharat data for lunar/shifting festivals
     const year = now.getFullYear();
     const cacheKey = `festivalCache_${year}`;
     const cacheTimeKey = `festivalCacheTime_${year}`;
@@ -828,8 +705,7 @@ async function getTodaysFestival(userState) {
             localStorage.setItem(cacheKey, JSON.stringify(calendarData));
             localStorage.setItem(cacheTimeKey, Date.now().toString());
         } catch (e) {
-            console.log("Festival calendar fetch failed:", e);
-            return null; // fail silently, greeting just skips the occasion line
+            return null;
         }
     }
     if (!calendarData) return null;
@@ -849,22 +725,15 @@ async function getTodaysFestival(userState) {
 
     const restriction = findRegionalMatch(entry.event);
     if (restriction) {
-        // Regional festival: only show if user's state matches
         if (userState && restriction.some(s => userState.toLowerCase().includes(s.toLowerCase()))) {
             return `Happy ${entry.event}! 🎉`;
         }
-        return null; // no state match → skip silently
+        return null;
     }
 
-    // National festival not in our regional map → show to everyone
     return `Happy ${entry.event}! 🎉`;
 }
 
-/*=====================================
-      DETECT USER LOCATION (once per day, cached)
-      Primary: GeoJS (silent, no popup)
-      Fallback: navigator.geolocation (shows permission popup)
-=====================================*/
 async function detectUserLocation() {
     const lastFetched = localStorage.getItem("userStateTimestamp");
     const ONE_DAY = 24 * 60 * 60 * 1000;
@@ -922,7 +791,7 @@ function getStoredUserState() {
     return localStorage.getItem("userState") || null;
 }
 
-detectUserLocation(); // run once per page load (throttled internally to once/day)
+detectUserLocation();
 
 /*=====================================
       DYNAMIC WELCOME MESSAGE
@@ -934,9 +803,10 @@ function getStoredUserName() {
         const user = JSON.parse(userJson);
         return user.name || null;
     } catch (e) {
-        return null; // malformed/missing JSON, fail silently
+        return null;
     }
 }
+
 function appendHtmlMessage(html) {
     const msgDiv = document.createElement("div");
     msgDiv.classList.add("message", "bot-message");
@@ -961,11 +831,11 @@ async function buildWelcomeMessage() {
     if (isLoggedIn) {
         lines.push("I am here to help you choose the suitable gift for your friend and can help you explore the GiftBloom page.");
         appendHtmlMessage(lines.join("<br>"));
-  } else {
+    } else {
         appendHtmlMessage(lines.join("<br>"));
         appendHtmlMessage(`Want to be a part of the <strong>GiftBloom family</strong>? <a href="signup.html" style="color:#ff4d8d; font-weight:600; text-decoration:underline;">Join us here →</a>`);
         appendHtmlMessage(`Already a member? <a href="login.html" style="color:#ff4d8d; font-weight:600; text-decoration:underline;">Login here →</a>`);
-         }
+    }
 }
 
 /*=====================================
@@ -983,8 +853,3 @@ if (chatbotToggle && chatbotWindow) {
         }
     });
 }
-
-// Debug helper — uncomment to inspect the raw calendar-bharat JSON in console
-// fetch(`https://jayantur13.github.io/calendar-bharat/calendar/${new Date().getFullYear()}.json`)
-//   .then(res => res.json())
-//   .then(data => console.log(data));

@@ -1,0 +1,1568 @@
+/*==============================
+        GOOGLE FONT & RESET
+==============================*/
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+    font-family:'Poppins',sans-serif;
+    background:linear-gradient(135deg,#FFE6F2,#F8E9FF,#FFF8FC);
+    color:#333;
+    overflow-x:hidden;
+}
+
+/*=====================================
+        CANVAS PAGE LOADER
+=====================================*/
+.page-loader {
+    position: fixed;
+    inset: 0;
+    /* Much more visible background - dark but highly transparent */
+    background: rgba(15, 10, 25, 0.4); 
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 99999; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+
+.loader-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative; /* Anchor for the absolute name */
+}
+
+#loaderCanvas {
+    width: 300px;
+    height: 300px;
+    z-index: 1;
+}
+
+.page-loader.fade-out {
+    opacity: 0;
+    visibility: hidden;
+}
+
+/*=====================================
+        TEXT INSIDE THE HEART 
+        (Left-to-Right Shimmer)
+=====================================*/
+.loader-name {
+    position: absolute;
+    top: 43%; /* Vertically centers inside the heart */
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Great Vibes', 'Dancing Script', 'Brush Script MT', cursive;
+    font-size: 14px;
+    z-index: 3;
+    pointer-events: none;
+    white-space: nowrap;
+    
+    /* The Traveling Light Gradient */
+    background: linear-gradient(
+        90deg, 
+        rgba(255, 77, 141, 0.3) 0%, 
+        rgba(255, 255, 255, 1) 50%, 
+        rgba(255, 77, 141, 0.3) 100%
+    );
+    background-size: 200% auto;
+    
+    /* Clip the background to the text shape */
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    
+    /* Drop-shadow is used instead of text-shadow for background-clipped text */
+    filter: drop-shadow(0 0 8px rgba(255, 77, 141, 0.8));
+
+    /* Animate the light from left to right */
+    animation: shimmer 1.8s linear infinite;
+}
+
+/* 200% to -200% forces the gradient to move from left to right */
+@keyframes shimmer {
+    0% { background-position: 200% center; }
+    100% { background-position: -200% center; }
+}
+
+/*=====================================
+        BOTTOM STATUS TEXT 
+        (Standard Fade/Glow)
+=====================================*/
+.loader-status {
+    color: #ffb3d9;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(255, 77, 141, 0.6);
+    animation: fade-text 1.2s infinite alternate;
+    margin-top: -20px; 
+    z-index: 2;
+}
+
+@keyframes fade-text {
+    0% { opacity: 0.5; text-shadow: 0 0 5px rgba(255, 77, 141, 0.4); }
+    100% { opacity: 1; text-shadow: 0 0 15px rgba(255, 77, 141, 1); }
+}
+
+
+/*==============================
+        FLOATING HEARTS
+==============================*/
+
+.hearts{
+
+position:fixed;
+
+top:0;
+
+left:0;
+
+width:100%;
+
+height:100%;
+
+overflow:hidden;
+
+pointer-events:none;
+
+z-index:-3;
+
+}
+
+body{
+
+background:linear-gradient(
+135deg,
+#FFF7FB,
+#FFEAF4,
+#F8ECFF);
+
+position:relative;
+
+}
+
+/* Pink Glow */
+
+body::before{
+
+content:"";
+
+position:fixed;
+
+width:320px;
+
+height:320px;
+
+background:#FFC7DF;
+
+top:-120px;
+
+right:-120px;
+
+border-radius:50%;
+
+filter:blur(120px);
+
+opacity:.6;
+
+z-index:-3;
+
+}
+
+/* Purple Glow */
+
+body::after{
+
+content:"";
+
+position:fixed;
+
+width:300px;
+
+height:300px;
+
+background:#E5D3FF;
+
+bottom:-120px;
+
+left:-120px;
+
+border-radius:50%;
+
+filter:blur(120px);
+
+opacity:.6;
+
+z-index:-3;
+
+}
+
+
+.heart{
+
+position:absolute;
+
+bottom:-50px;
+
+color:#ff8ab8;
+
+opacity:.18;
+
+animation:heartFloat linear infinite;
+
+}
+
+@keyframes heartFloat{
+
+0%{
+
+transform:translateY(0) rotate(0deg);
+
+opacity:0;
+
+}
+
+20%{
+
+opacity:.18;
+
+}
+
+100%{
+
+transform:translateY(-120vh) rotate(360deg);
+
+opacity:0;
+
+}
+
+}
+/*==============================
+            NAVBAR
+==============================*/
+
+header{
+
+    position:fixed;
+
+    width:100%;
+
+    top:0;
+
+    left:0;
+
+    z-index:1000;
+
+    padding:15px;
+
+}
+
+.navbar{
+
+    max-width:1200px;
+
+    margin:auto;
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:15px 25px;
+
+    border-radius:20px;
+
+    background:rgba(255,255,255,.35);
+
+    backdrop-filter:blur(15px);
+
+    border:1px solid rgba(255,255,255,.4);
+
+    box-shadow:0 15px 40px rgba(0,0,0,.08);
+
+}
+
+.logo{
+
+    font-size:26px;
+
+    font-weight:700;
+
+    color:#ff4d8d;
+
+}
+
+.navbar ul{
+
+    display:flex;
+
+    gap:30px;
+
+    list-style:none;
+
+}
+
+.navbar a{
+
+    text-decoration:none;
+
+    color:#444;
+
+    font-weight:500;
+
+    transition:.3s;
+
+}
+
+.navbar a:hover{
+
+    color:#ff4d8d;
+
+}
+
+.signup{
+
+    background:#ff4d8d;
+
+    color:white !important;
+
+    padding:10px 18px;
+
+    border-radius:25px;
+
+}
+
+.signup:hover{
+
+    background:#ff2d78;
+
+}
+
+.menu-btn{
+
+    display:none;
+
+    font-size:30px;
+
+    cursor:pointer;
+
+}
+
+/*==============================
+            HERO
+==============================*/
+
+.hero{
+
+    min-height:100vh;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    padding:120px 20px 40px;
+
+}
+
+.hero-box{
+
+    max-width:760px;
+
+    width:100%;
+
+    text-align:center;
+
+    padding:45px 35px;
+
+}
+
+.glass{
+
+    background:rgba(255,255,255,.28);
+
+    backdrop-filter:blur(18px);
+
+    border:1px solid rgba(255,255,255,.45);
+
+    border-radius:25px;
+
+    box-shadow:0 20px 50px rgba(0,0,0,.08);
+
+}
+
+.gift{
+
+    font-size:90px;
+
+    margin-bottom:15px;
+
+}
+
+.hero h1{
+
+    font-size:54px;
+
+    color:#222;
+
+    line-height:1.2;
+
+    margin-bottom:20px;
+
+}
+
+.hero span{
+
+    color:#ff4d8d;
+
+}
+
+.hero p{
+
+    font-size:18px;
+
+    color:#666;
+
+    line-height:1.8;
+
+    margin-bottom:30px;
+
+}
+
+/*==============================
+          BUTTONS
+==============================*/
+
+.hero-buttons{
+
+    display:flex;
+
+    justify-content:center;
+
+    gap:15px;
+
+    flex-wrap:wrap;
+
+}
+
+button{
+
+    border:none;
+
+    cursor:pointer;
+
+    transition:.35s;
+
+    font-family:'Poppins',sans-serif;
+
+}
+
+.primary{
+
+    background:#ff4d8d;
+
+    color:white;
+
+    padding:15px 28px;
+
+    border-radius:35px;
+
+    font-size:16px;
+
+    font-weight:600;
+
+}
+
+.primary:hover{
+
+    transform:translateY(-4px);
+
+    box-shadow:0 15px 30px rgba(255,77,141,.35);
+
+}
+
+.secondary{
+
+    background:white;
+
+    color:#ff4d8d;
+
+    padding:15px 28px;
+
+    border-radius:35px;
+
+    font-size:16px;
+
+    font-weight:600;
+
+}
+
+.secondary:hover{
+
+    transform:translateY(-4px);
+
+    box-shadow:0 15px 30px rgba(0,0,0,.12);
+
+}
+
+button{
+
+position:relative;
+
+overflow:hidden;
+
+}
+
+.ripple{
+
+position:absolute;
+
+width:20px;
+
+height:20px;
+
+border-radius:50%;
+
+background:rgba(255,255,255,.6);
+
+transform:translate(-50%,-50%) scale(0);
+
+animation:ripple .6s linear;
+
+}
+
+@keyframes ripple{
+
+to{
+
+transform:translate(-50%,-50%) scale(15);
+
+opacity:0;
+
+}
+
+}
+/*==============================
+        SECTION TITLE
+==============================*/
+
+.title{
+    text-align:center;
+    margin-bottom:35px;
+}
+
+.title h2{
+    font-size:32px;
+    color:#2b2b2b;
+    margin-bottom:10px;
+}
+
+.title p{
+    color:#777;
+    font-size:15px;
+}
+
+/*==============================
+      TRENDING CAMPAIGNS
+==============================*/
+
+.campaign-section{
+    width:100%;
+    max-width:1200px;
+    margin:auto;
+    padding:30px 20px 80px;
+}
+
+.campaigns{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+    gap:25px;
+}
+
+.card{
+    overflow:hidden;
+    transition:.35s;
+}
+
+.card:hover{
+    transform:translateY(-10px);
+    box-shadow:0 20px 45px rgba(255,77,141,.15);
+}
+
+.card{
+
+overflow:hidden;
+
+padding:0;
+
+transition:.35s;
+
+}
+
+.card-image {
+    position: relative;
+    height: auto; /* 🌟 Unlocks the container height! */
+    background: #fffafc; /* Adds a soft background color just in case */
+    overflow: hidden;
+}
+
+.card-image img {
+    width: 100%;
+    height: auto; /* 🌟 Lets the image use its natural shape */
+    max-height: 350px; /* 🌟 Prevents extremely long screenshots from breaking the screen */
+    object-fit: contain; /* 🌟 Ensures absolutely NO cropping */
+    display: block;
+    transition: .4s;
+}
+
+
+.card:hover img{
+
+transform:scale(1.08);
+
+}
+
+.badge{
+
+position:absolute;
+
+top:15px;
+
+left:15px;
+
+background:white;
+
+color:#ff4d8d;
+
+padding:6px 14px;
+
+border-radius:20px;
+
+font-size:13px;
+
+font-weight:600;
+
+box-shadow:0 5px 15px rgba(0,0,0,.12);
+
+}
+
+.receiver{
+
+color:#ff4d8d;
+
+margin:6px 0 15px;
+
+font-weight:500;
+
+}
+
+.progress-details{
+
+display:flex;
+
+justify-content:space-between;
+
+font-size:14px;
+
+font-weight:600;
+
+margin-bottom:10px;
+
+}
+
+.card-footer{
+
+display:flex;
+
+justify-content:space-between;
+
+margin:18px 0;
+
+color:#777;
+
+font-size:14px;
+
+}
+
+.card button{
+
+width:100%;
+
+padding:15px;
+
+border:none;
+
+border-radius:14px;
+
+background:linear-gradient(
+135deg,
+#ff4d8d,
+#ff7cae);
+
+color:white;
+
+font-size:15px;
+
+font-weight:600;
+
+transition:.35s;
+
+}
+
+.card button:hover{
+
+transform:translateY(-3px);
+
+box-shadow:0 15px 25px rgba(255,77,141,.35);
+
+}
+
+.content{
+    padding:22px;
+}
+
+.content h3{
+    font-size:24px;
+    color:#333;
+}
+
+.content span{
+    display:block;
+    color:#ff4d8d;
+    margin:8px 0 18px;
+    font-weight:500;
+}
+
+.amount{
+
+    font-size:18px;
+
+    font-weight:600;
+
+    margin:15px 0;
+
+}
+
+.donors{
+
+    color:#666;
+
+    margin-bottom:20px;
+
+}
+
+/*==============================
+        PROGRESS BAR
+==============================*/
+
+.progress{
+
+    width:100%;
+
+    height:12px;
+
+    background:#ececec;
+
+    border-radius:30px;
+
+    overflow:hidden;
+
+}
+
+.fill{
+
+    height:100%;
+
+    border-radius:30px;
+
+    background:linear-gradient(
+    90deg,
+    #ff4d8d,
+    #ff9bc5);
+
+}
+
+/*==============================
+      CARD BUTTON
+==============================*/
+
+.card button{
+
+    width:100%;
+
+    padding:15px;
+
+    border-radius:14px;
+
+    background:#ff4d8d;
+
+    color:white;
+
+    font-size:16px;
+
+    font-weight:600;
+
+}
+
+.card button:hover{
+
+    background:#ff2d78;
+
+    transform:scale(1.03);
+
+}
+
+/*==============================
+        HOW IT WORKS
+==============================*/
+
+/*=================================
+        HOW IT WORKS
+==================================*/
+
+.works{
+    max-width:1200px;
+    margin:80px auto;
+    padding:0 20px;
+}
+
+.timeline{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:18px;
+    margin-top:45px;
+}
+
+.step-card{
+    flex:1;
+    text-align:center;
+    padding:35px 22px;
+    position:relative;
+    transition:.35s;
+    overflow:hidden;
+}
+
+.step-card:hover{
+    transform:translateY(-10px);
+    box-shadow:0 18px 40px rgba(255,77,141,.18);
+}
+
+.step-number{
+
+    position:absolute;
+
+    top:18px;
+    right:18px;
+
+    width:34px;
+    height:34px;
+
+    border-radius:50%;
+
+    background:linear-gradient(135deg,#ff4d8d,#ff80b3);
+
+    color:#fff;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    font-weight:700;
+    font-size:15px;
+
+    box-shadow:0 8px 20px rgba(255,77,141,.35);
+
+}
+
+.step-icon{
+
+    width:90px;
+    height:90px;
+
+    margin:0 auto 20px;
+
+    border-radius:50%;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    font-size:42px;
+
+    background:linear-gradient(
+        135deg,
+        #ffe2ef,
+        #fff8fd
+    );
+
+    box-shadow:0 12px 28px rgba(255,77,141,.15);
+
+}
+
+.step-card h3{
+
+    font-size:22px;
+    color:#333;
+    margin-bottom:12px;
+
+}
+
+.step-card p{
+
+    color:#666;
+    line-height:1.7;
+    font-size:15px;
+
+}
+
+.connector{
+
+    width:70px;
+    height:4px;
+
+    border-radius:20px;
+
+    background:linear-gradient(
+        90deg,
+        #ff4d8d,
+        #ffb3cf
+    );
+
+    position:relative;
+
+}
+
+.connector::after{
+
+    content:"❤";
+
+    position:absolute;
+
+    top:-13px;
+    left:50%;
+
+    transform:translateX(-50%);
+
+    font-size:15px;
+    color:#ff4d8d;
+
+}
+
+/*============ MOBILE ============*/
+
+@media(max-width:900px){
+
+.timeline{
+
+flex-direction:column;
+
+}
+
+.connector{
+
+width:4px;
+height:55px;
+
+}
+
+.connector::after{
+
+left:50%;
+top:50%;
+
+transform:translate(-50%,-50%) rotate(90deg);
+
+}
+
+.step-card{
+
+width:100%;
+
+}
+
+}
+/*=================================
+        STATISTICS
+==================================*/
+
+.stat{
+
+padding:35px 25px;
+
+text-align:center;
+
+transition:.4s;
+
+position:relative;
+
+overflow:hidden;
+
+}
+
+.stat:hover{
+
+transform:translateY(-8px);
+
+box-shadow:0 20px 45px rgba(255,77,141,.18);
+
+}
+
+.stat-icon{
+
+width:70px;
+
+height:70px;
+
+margin:auto;
+
+margin-bottom:18px;
+
+display:flex;
+
+justify-content:center;
+
+align-items:center;
+
+font-size:30px;
+
+border-radius:50%;
+
+background:linear-gradient(
+135deg,
+#FFD9EA,
+#FFEFFF);
+
+box-shadow:0 10px 20px rgba(255,77,141,.12);
+
+}
+
+.stat h2{
+
+font-size:40px;
+
+color:#ff4d8d;
+
+margin-bottom:8px;
+
+}
+
+.stat p{
+
+font-size:15px;
+
+font-weight:600;
+
+color:#666;
+
+}
+/*=================================
+      CALL TO ACTION
+==================================*/
+
+.cta{
+
+    padding:20px;
+
+    margin-bottom:80px;
+
+}
+
+.cta-box{
+
+    max-width:900px;
+
+    margin:auto;
+
+    text-align:center;
+
+    padding:45px 25px;
+
+}
+
+.cta-box h2{
+
+    font-size:38px;
+
+    margin-bottom:18px;
+
+    color:#2f2f2f;
+
+}
+
+.cta-box p{
+
+    color:#666;
+
+    line-height:1.8;
+
+    margin-bottom:30px;
+
+}
+
+.cta-box button{
+
+    background:#ff4d8d;
+
+    color:white;
+
+    padding:16px 32px;
+
+    border:none;
+
+    border-radius:35px;
+
+    font-size:17px;
+
+    font-weight:600;
+
+    transition:.35s;
+
+}
+
+.cta-box button:hover{
+
+    transform:translateY(-5px);
+
+    box-shadow:0 15px 35px rgba(255,77,141,.35);
+
+}
+
+/*=================================
+      FLOATING ANIMATION
+==================================*/
+
+.gift{
+
+    animation:float 3s ease-in-out infinite;
+
+}
+
+@keyframes float{
+
+0%,100%{
+
+transform:translateY(0);
+
+}
+
+50%{
+
+transform:translateY(-12px);
+
+}
+
+}
+
+/*=================================
+      FADE ANIMATION
+==================================*/
+
+.hero-box,
+.card,
+.step,
+.stat,
+.cta-box{
+
+    animation:fadeUp .8s ease;
+
+}
+
+@keyframes fadeUp{
+
+from{
+
+opacity:0;
+
+transform:translateY(35px);
+
+}
+
+to{
+
+opacity:1;
+
+transform:translateY(0);
+
+}
+
+}
+
+/*=================================
+        MOBILE MENU
+==================================*/
+
+@media(max-width:850px){
+
+.menu-btn{
+
+display:block;
+
+color:#ff4d8d;
+
+}
+
+.navbar{
+
+padding:15px 20px;
+
+}
+
+.navbar ul{
+position:absolute;
+top:85px;
+left:15px;
+right:15px;
+display:none;
+flex-direction:column;
+background:rgba(255,255,255,.95);
+backdrop-filter:blur(18px);
+border-radius:20px;
+padding:20px;
+box-shadow:0 15px 40px rgba(0,0,0,.1);
+gap:20px;
+}
+
+.navbar ul.show{
+display:flex;
+}
+
+.hero h1{
+font-size:38px;
+}
+
+.hero p{
+font-size:16px;
+}
+
+.gift{
+font-size:70px;
+}
+
+.hero-box{
+padding:35px 20px;
+}
+
+.campaigns{
+grid-template-columns:1fr;
+}
+
+.stats{
+grid-template-columns:1fr 1fr;
+}
+
+.cta-box h2{
+font-size:30px;
+}
+}
+
+@media(max-width:480px){
+
+.stats{
+grid-template-columns:1fr;
+}
+
+.title h2{
+font-size:26px;
+}
+
+.hero h1{
+font-size:30px;
+}
+
+.hero-buttons{
+flex-direction:column;
+}
+
+.hero button{
+width:100%;
+}
+
+.logo{
+font-size:22px;
+}
+}
+
+/*=================================
+      CUSTOM SCROLLBAR
+==================================*/
+
+::-webkit-scrollbar{
+width:8px;
+}
+
+::-webkit-scrollbar-track{
+background:#ffeef5;
+}
+
+::-webkit-scrollbar-thumb{
+
+background:#ff4d8d;
+
+border-radius:20px;
+
+}
+
+::-webkit-scrollbar-thumb:hover{
+
+background:#ff2d78;
+
+}
+
+/*==============================
+        CHATBOT STYLES
+==============================*/
+.chat-toggle-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px; /* Positioned exactly like the '+' in the IndianOil screenshot */
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff4d8d, #ff7cae);
+    color: white;
+    font-size: 30px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 10px 25px rgba(255, 77, 141, 0.4);
+    z-index: 9999;
+    transition: 0.3s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.chat-toggle-btn:hover {
+    transform: scale(1.1) translateY(-5px);
+    box-shadow: 0 15px 30px rgba(255, 77, 141, 0.5);
+}
+
+.chat-window {
+    position: fixed;
+    bottom: 110px;
+    right: 30px;
+    width: 360px;
+    height: 500px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: 0.3s ease;
+    animation: fadeUp 0.4s ease;
+}
+
+.chat-header {
+    background: linear-gradient(135deg, #ff4d8d, #ff7cae);
+    color: white;
+    padding: 18px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chat-header h3 {
+    font-size: 16px;
+    margin: 0;
+    font-weight: 600;
+}
+
+.chat-header span {
+    cursor: pointer;
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 5px 10px;
+    border-radius: 50%;
+    transition: 0.3s;
+}
+
+.chat-header span:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.chat-body {
+    padding: 20px;
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.message {
+    max-width: 85%;
+    padding: 12px 16px;
+    border-radius: 18px;
+    font-size: 14px;
+    line-height: 1.5;
+    animation: fadeUp 0.3s ease;
+}
+
+.bot-message {
+    background: #ffe6f2;
+    color: #444;
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+}
+
+.user-message {
+    background: #ff4d8d;
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+}
+
+.loading-dots {
+    color: #ff4d8d;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+.chat-footer {
+    padding: 12px 15px; /* Slightly adjusted padding for mobile */
+    background: white;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center; /* Ensures perfect vertical alignment */
+    justify-content: space-between; /* Pushes input and button apart */
+    gap: 8px; /* Controls the space between input and button */
+}
+
+.chat-footer input {
+    flex: 1; /* Tells the input to take available space */
+    min-width: 0; /* 🌟 THE MAGIC FIX: Forces the input to allow itself to shrink! 🌟 */
+    width: 100%; /* Backup constraint */
+    padding: 12px 15px;
+    border: 1px solid #ffb3d9;
+    border-radius: 25px;
+    outline: none;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    background: #fafafa;
+}
+
+.chat-footer button {
+    background: #ff4d8d;
+    color: white;
+    border: none;
+    width: 42px; /* Slightly tweaked size for a cleaner fit */
+    height: 42px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: 0.3s;
+    font-size: 18px;
+    flex-shrink: 0; /* Tells the button NEVER to shrink */
+}
+
+.chat-footer button:hover {
+    background: #ff2d78;
+    transform: scale(1.05);
+}
+
+.chat-footer input:focus {
+    border-color: #ff4d8d;
+    box-shadow: 0 0 8px rgba(255, 77, 141, 0.2);
+}
+
+
+/* Chatbot Mobile Adjustments */
+@media(max-width: 500px) {
+    .chat-window {
+        width: 90%;
+        right: 5%;
+        bottom: 100px;
+        height: 60vh;
+    }
+}
+
+
+.chat-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+    align-self: flex-start;
+    max-width: 85%;
+}
+
+.chat-action-btn {
+    background: white;
+    color: #ff4d8d;
+    border: 1.5px solid #ff4d8d;
+    padding: 8px 14px;
+    border-radius: 16px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    white-space: nowrap;
+}
+
+.chat-action-btn:hover {
+    background: #ff4d8d;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.chat-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 0 20px 15px;
+}
+
+.reload-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    margin-left: 10px;
+    vertical-align: middle;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 77, 141, 0.12);
+    backdrop-filter: blur(6px);
+    cursor: pointer;
+    transition: background 0.25s ease, transform 0.25s ease;
+}
+.reload-btn:hover {
+    background: rgba(255, 77, 141, 0.22);
+    transform: scale(1.08);
+}
+.reload-btn svg {
+    transition: transform 0.3s ease;
+}
+.reload-btn.spinning svg {
+    animation: spin-reload 0.8s linear infinite;
+}
+@keyframes spin-reload {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+#trendingCampaigns {
+    transition: opacity 0.3s ease;
+}

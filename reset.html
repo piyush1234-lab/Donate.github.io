@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Password | GiftBloom</title>
+    <link rel="stylesheet" href="login.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="hearts"></div>
+    <section class="login-page">
+        <div class="glass login-card">
+            <h1>New Password 🔐</h1>
+            <p class="subtitle">Please enter your new password below.</p>
+            
+            <form id="newPasswordForm">
+                <label>New Password</label>
+                <div class="password-box">
+                    <input type="password" id="newPass" placeholder="Create new password" required>
+                </div>
+                
+                <label>Confirm Password</label>
+                <div class="password-box">
+                    <input type="password" id="confirmPass" placeholder="Confirm new password" required>
+                </div>
+
+                <p id="matchMsg" style="font-size: 13px; font-weight: 600; margin-top: 8px; display: none;"></p>
+                
+                <button type="submit" id="saveBtn" class="primary" style="margin-top: 20px;">
+                    Save New Password
+                </button>
+            </form>
+            <p class="bottom-text" style="margin-top: 20px;">
+                <a href="login.html">Back to Login</a>
+            </p>
+        </div>
+    </section>
+
+    <script>
+        
+        /*=====================================
+              FLOATING HEARTS
+        =====================================*/
+        const hearts = document.querySelector(".hearts");
+        for(let i=0; i<18; i++){
+            let heart = document.createElement("div");
+            heart.className = "heart";
+            heart.innerHTML = "❤";
+            heart.style.left = Math.random() * 100 + "vw";
+            heart.style.fontSize = (12 + Math.random() * 18) + "px";
+            heart.style.animationDuration = (8 + Math.random() * 8) + "s";
+            heart.style.animationDelay = (Math.random() * 5) + "s";
+            if(hearts) hearts.appendChild(heart);
+        }
+
+        /*=====================================
+              TOKEN VERIFICATION
+        =====================================*/
+        let resetToken = "";
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+resetToken = token;
+
+        if(!token) {
+            alert("Invalid or missing password reset link. Please request a new one.");
+            window.location.href = "login.html";
+        }
+
+        /*=====================================
+              LIVE PASSWORD MATCHING
+        =====================================*/
+        const newPass = document.getElementById("newPass");
+        const confirmPass = document.getElementById("confirmPass");
+        const matchMsg = document.getElementById("matchMsg");
+
+        function checkMatch() {
+            if (confirmPass.value === "") {
+                matchMsg.style.display = "none";
+                return;
+            }
+            matchMsg.style.display = "block";
+            if (newPass.value === confirmPass.value) {
+                matchMsg.innerHTML = "✅ Passwords match";
+                matchMsg.style.color = "#0b8a38"; 
+            } else {
+                matchMsg.innerHTML = "❌ Passwords do not match";
+                matchMsg.style.color = "#d60000"; 
+            }
+        }
+        newPass.addEventListener("input", checkMatch);
+        confirmPass.addEventListener("input", checkMatch);
+
+        /*=====================================
+              SUBMIT NEW PASSWORD
+        =====================================*/ document.getElementById("newPasswordForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            
+            if (newPass.value !== confirmPass.value) {
+                alert("Passwords do not match!");
+                return;
+            }
+            if (newPass.value.length < 8) {
+                alert("Password must be at least 8 characters.");
+                return;
+            }
+
+            const saveBtn = document.getElementById("saveBtn");
+            saveBtn.innerHTML = "Saving... ⏳";
+            saveBtn.disabled = true;
+
+            const API_URL = "https://script.google.com/macros/s/AKfycbxyVajhdo-ZT_N5px_hqM2fFWNqpAu3yw6YRZDhK0_3jQ_eLdzKYhnvyfeQyxuGP_jS/exec";
+
+            try {
+                const response = await fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({ action: "updatePassword", data: { token: resetToken, newPassword: newPass.value } })
+});
+
+                const result = await response.json();
+
+                if (result.status === "Success") {
+                    alert("✅ " + result.message + " You can now login.");
+                    window.location.href = "login.html";
+                } else {
+                    alert("❌ " + result.message);
+                    saveBtn.innerHTML = "Save New Password";
+                    saveBtn.disabled = false;
+                }
+            } catch (error) {
+    alert("❌ Something went wrong. Please try again or request a new reset link.");
+    console.error("Reset password error:", error);
+}
+        });
+    </script>
+</body>
+</html>

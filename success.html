@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Campaign Published | GiftBloom</title>
+
+<link rel="stylesheet" href="success.css">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+</head>
+
+<body>
+ <script>
+        // Check if maintenance mode is active before letting the user interact
+        const siteSettings = JSON.parse(localStorage.getItem("adminSettings")) || {};
+        
+        if (siteSettings.maintenance) {
+            // Overwrite the screen UI completely
+            document.body.innerHTML = `
+                <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh; background:linear-gradient(135deg,#FFF7FB,#FFEAF4,#F8ECFF); font-family:'Poppins',sans-serif; text-align:center; padding: 20px;">
+                    <h1 style="color:#ff4d8d; font-size:45px; margin-bottom: 10px;">🛠 Site Under Maintenance</h1>
+                    <p style="color:#666; font-size:18px; max-width: 500px;">We are currently upgrading GiftBloom to serve you better. Donations are temporarily paused. Please check back shortly!</p>
+                </div>
+            `;
+            // Stop any further scripts on the frontend from executing
+            window.stop(); 
+        }
+    </script>
+<div class="hearts"></div>
+
+<section class="success-page">
+
+<div class="glass success-card">
+
+<div class="success-icon">
+
+🎉
+
+</div>
+
+<h1>
+
+Campaign Published Successfully!
+
+</h1>
+
+<p>
+
+Your campaign is now live and ready to receive support.
+
+</p>
+
+<!-- Campaign Summary -->
+
+<div class="summary">
+
+<img
+id="giftImage"
+src=""
+alt="Gift">
+
+<h2 id="giftName">
+
+Loading...
+
+</h2>
+
+<p>
+
+❤️ For
+
+<span id="receiver">
+
+Loading...
+
+</span>
+
+</p>
+
+</div>
+
+<!-- Campaign ID -->
+
+<div class="campaign-id">
+
+Campaign ID
+
+<h3 id="campaignId">
+
+GB000001
+
+</h3>
+
+</div>
+
+<!-- Share Link -->
+
+<div class="share-box">
+
+<input
+type="text"
+id="campaignLink"
+readonly>
+
+<button
+id="copyBtn">
+
+📋 Copy
+
+</button>
+
+</div>
+
+<!-- Buttons -->
+
+<div class="buttons">
+
+<button
+id="viewBtn"
+class="primary">
+
+👀 View Campaign
+
+</button>
+
+<button
+id="shareBtn"
+class="secondary">
+
+📤 Share Campaign
+
+</button>
+
+<button
+id="dashboardBtn"
+class="secondary">
+
+📊 Dashboard
+
+</button>
+
+<button
+id="homeBtn"
+class="secondary">
+
+🏠 Home
+
+</button>
+
+</div>
+
+</div>
+
+</section>
+
+<script src="success.js"></script>
+
+</body>
+
+</html>

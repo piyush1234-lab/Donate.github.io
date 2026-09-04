@@ -298,7 +298,18 @@ function renderCampaignPage() {
     }
 
     document.getElementById("mainContent").style.display = "block";
-    
+
+    // Track a unique view per browser session (skip if the owner is viewing their own campaign)
+    const viewedKey = "viewed_" + campaignId;
+    const isOwnerViewing = currentUser && currentCampaign.ownerId === currentUser.userId;
+    if (!sessionStorage.getItem(viewedKey) && !isOwnerViewing) {
+        sessionStorage.setItem(viewedKey, "true");
+        fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "incrementCampaignView", data: { campaignId: campaignId } })
+        }).catch(() => {});
+    }  
+      
     // ADMIN FIX 2: ADD "VERIFIED" BADGE NEXT TO TITLE
     let titleText = currentCampaign.gift || currentCampaign.giftName || "Gift Campaign";
     if (currentCampaign.adminApproved === true) {
@@ -574,7 +585,8 @@ function renderCampaignPage() {
                                     action: "extendCampaignDate", 
                                     data: { 
                                         campaignId: currentCampaign.campaignId || campaignId,
-                                        newTargetDate: newDate
+                                        newTargetDate: newDate,
+                                        token: currentUser?.token || ""
                                     } 
                                 })
                             });
@@ -1025,9 +1037,4 @@ for (let i = 0; i < 18; i++) {
     heart.style.animationDelay = Math.random() * 6 + "s";
     document.querySelector(".hearts").appendChild(heart);
 }
- const viewedKey = "viewed_" + campaignId;
-if (!sessionStorage.getItem(viewedKey) && campaign.ownerId !== currentUser?.userId) {
-    sessionStorage.setItem(viewedKey, "true");
-    fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "incrementCampaignView", data: { campaignId: campaignId } }) }).catch(() => {});
-}
- 
+  

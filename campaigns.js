@@ -309,19 +309,19 @@ function renderCampaignPage() {
             body: JSON.stringify({ action: "incrementCampaignView", data: { campaignId: campaignId } })
         }).catch(() => {});
     }  
-      
-    // ADMIN FIX 2: ADD "VERIFIED" BADGE NEXT TO TITLE
+        
+        // ADMIN FIX 2: ADD "VERIFIED" BADGE NEXT TO TITLE
     let titleText = currentCampaign.gift || currentCampaign.giftName || "Gift Campaign";
-    if (currentCampaign.adminApproved === true) {
-        document.getElementById("giftName").innerHTML = `
-            <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
-                <span>${titleText}</span>
-                <span style="font-size: 14px; font-weight: 600; background:#e3fcef; color:#0b8a38; padding: 4px 12px; border-radius: 20px; border: 1px solid #0b8a38; white-space: nowrap;">✅ Verified</span>
-            </div>
-        `;
-    } else {
-        document.getElementById("giftName").innerHTML = titleText;
-    }
+    
+    document.getElementById("giftName").innerHTML = `
+        <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <span>${titleText}</span>
+            ${currentCampaign.verified ? `<span style="display:inline-flex;align-items:center;gap:4px;background:#e8f5e9;color:#2e7d32;font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;margin-left:8px;">✅ Admin Verified</span>` : ""}
+        </div>
+    `;
+
+    document.getElementById("campaignStory").innerText = currentCampaign.story || "No story provided.";
+
 
     document.getElementById("campaignStory").innerText = currentCampaign.story || "No story provided.";
     document.querySelector(".receiver").innerText = "For " + (currentCampaign.receiver || "Someone special") + " ❤️";
@@ -785,17 +785,21 @@ function renderCampaignPage() {
                                 simImage = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w500";
                             }
 
-                            similarContainer.innerHTML += `
+                                                        similarContainer.innerHTML += `
                             <div class="glass card">
                                 <div class="card-image"><img src="${simImage}" alt="Gift"></div>
                                 <div class="content">
-                                    <h3>${simCampaign.gift || "Gift Campaign"}</h3>
+                                    <h3 style="display:flex; align-items:center; flex-wrap:wrap;">
+                                        ${simCampaign.gift || "Gift Campaign"}
+                                        ${simCampaign.verified ? `<span style="display:inline-flex;align-items:center;gap:4px;background:#e8f5e9;color:#2e7d32;font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;margin-left:8px;">✅ Admin Verified</span>` : ""}
+                                    </h3>
                                     <p style="color:#ff4d8d; font-weight:500; margin-bottom:15px;">For ${simCampaign.receiver || "Someone"} ❤️</p>
                                     <button style="width:100%; padding:12px; border:none; border-radius:12px; background:#ff4d8d; color:white; font-weight:600; cursor:pointer;" onclick="window.location.href='campaigns.html?id=${simCampaign.campaignId}'">
                                         View Campaign
                                     </button>
                                 </div>
                             </div>`;
+;
                         }
                     }
                 } else {

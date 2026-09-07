@@ -441,36 +441,42 @@ function renderTrendingCampaigns(campaigns, containerElement) {
         return;
     }
 
-    activeCampaigns.forEach((campaign) => {
-        const raised = Number(campaign.raisedAmount) || 0;
-        const target = Number(campaign.targetAmount) || 0;
+            activeCampaigns.forEach((campaign) => {
+            const raised = Number(campaign.raisedAmount) || 0;
+            const target = Number(campaign.targetAmount) || 0;
 
-        let percent = target > 0 ? Math.round((raised / target) * 100) : 0;
-        if (percent > 100) percent = 100;
+            let percent = target > 0 ? Math.round((raised / target) * 100) : 0;
+            if (percent > 100) percent = 100;
 
-        let displayImage = 'images/teddy.jpg';
-        if (campaign.giftImageUrl && campaign.giftImageUrl.trim() !== "") {
-            displayImage = campaign.giftImageUrl.trim();
-            if (displayImage.includes("drive.google.com/uc?id=")) {
-                let fileId = displayImage.split("id=")[1].split("&")[0];
-                displayImage = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w1000";
+            let displayImage = 'images/teddy.jpg';
+            if (campaign.giftImageUrl && campaign.giftImageUrl.trim() !== "") {
+                displayImage = campaign.giftImageUrl.trim();
+                if (displayImage.includes("drive.google.com/uc?id=")) {
+                    let fileId = displayImage.split("id=")[1].split("&")[0];
+                    displayImage = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w1000";
+                }
             }
-        }
 
-        container.innerHTML += `
-        <div class="glass card">
-            <div class="card-image">
-                <img src="${displayImage}" alt="Gift" onerror="this.onerror=null; this.src='images/teddy.jpg';">
-                <div class="badge">❤️ Trending</div>
-            </div>
-            <div class="content">
-                <div style="margin-bottom: 8px;">
-                    <span style="background: rgba(255, 77, 141, 0.1); border: 1px solid rgba(255, 77, 141, 0.3); color: #ff4d8d; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; display: inline-block; letter-spacing: 0.5px;">
-                        🆔 ${campaign.campaignId}
-                    </span>
+            // Checks both adminStatus and verified boolean flags
+            let adminBadge = "";
+            if (campaign.adminStatus === "Approved" || campaign.verified === true || campaign.verified === "true") {
+                adminBadge = `<span style="background:#e3fcef; color:#0b8a38; border:1px solid #0b8a38; font-size:11px; padding:2px 8px; border-radius:12px; margin-left:6px; display:inline-block; vertical-align:middle;">✅ Verified</span>`;
+            }
+
+            container.innerHTML += `
+            <div class="glass card">
+                <div class="card-image">
+                    <img src="${displayImage}" alt="Gift" onerror="this.onerror=null; this.src='images/teddy.jpg';">
+                    <div class="badge">❤️ Trending</div>
                 </div>
-                
-                <h3 style="margin-top: 5px;">${campaign.gift || 'Surprise Gift'}</h3>
+                <div class="content">
+                    <div style="margin-bottom: 8px;">
+                        <span style="background: rgba(255, 77, 141, 0.1); border: 1px solid rgba(255, 77, 141, 0.3); color: #ff4d8d; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; display: inline-block; letter-spacing: 0.5px;">
+                            🆔 ${campaign.campaignId}
+                        </span>
+                    </div>
+                    
+                    <h3 style="margin-top: 5px;">${campaign.gift || 'Surprise Gift'} ${adminBadge}</h3>
                 <p class="receiver">For ${campaign.receiver || 'Someone Special'} ❤️</p>
                 
                 <div class="progress-details">
@@ -672,6 +678,7 @@ const REGIONAL_FESTIVALS = {
     "Nuakhai": ["Odisha"],
     "Hornbill Festival": ["Nagaland"],
     "Losar": ["Sikkim"],
+    "Janmasthmi" : ["Uttar Pradesh", "West Bengal"]
 };
 
 function findRegionalMatch(eventName) {

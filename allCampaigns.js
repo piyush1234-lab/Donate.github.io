@@ -161,10 +161,10 @@ function renderCampaigns() {
         }
 
              let adminBadge = "";
-        // Match the backend property 'adminStatus'
-        if (c.adminStatus === "Approved") {
-            adminBadge = `<span class="badge" style="background:#e3fcef; color:#0b8a38; border:1px solid #0b8a38; margin-left:8px;">✅ Verified</span>`;
-        }
+// Checks both adminStatus and verified boolean flags
+if (c.adminStatus === "Approved" || c.verified === true || c.verified === "true") {
+    adminBadge = `<span class="badge" style="background:#e3fcef; color:#0b8a38; border:1px solid #0b8a38; margin-left:8px;">✅ Verified</span>`;
+}
 
  let displayImage = (c.image && c.image.trim() !== "") ? c.image.trim() : "images/teddy.jpg";
 if (displayImage.includes("drive.google.com/uc?id=")) {

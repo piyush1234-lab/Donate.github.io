@@ -9,7 +9,7 @@ const currentUser = JSON.parse(localStorage.getItem("currentUser"));
 const isLoggedIn = localStorage.getItem("isLoggedIn") === "true" || sessionStorage.getItem("isLoggedIn") === "true";
 
 if (isLoggedIn && currentUser && (currentUser.userId || currentUser.id)) {
-    window.location.href = "dashboard.html"; // Skip login screen
+    window.location.href = "dashboard(combined).html"; // Skip login screen
 }
 
 

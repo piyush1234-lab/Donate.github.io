@@ -502,7 +502,7 @@ async function loadCampaigns(){
     if(!campaignContainer) return;
 
     // 👉 SHOW LOADER IMMEDIATELY 
-    showPageLoader("Fetching Campaigns... ⏳");
+    showPageLoader("Fetching Campaigns...");
 
     campaignContainer.innerHTML=`
     <div class="glass" style="padding:30px;text-align:center;">
@@ -541,16 +541,36 @@ async function loadCampaigns(){
                 return;
             }
             
-            campaigns.forEach((campaign,index)=>{
+                                    campaigns.forEach((campaign,index)=>{
                 let percent = campaign.target > 0 ? Math.round((campaign.raised / campaign.target) * 100) : 0;
                 if(percent > 100) percent = 100;
                 
+                // 1. Properly extract and convert the image link
+                let displayImage = 'images/default.jpg';
+                let sourceImg = campaign.giftImageUrl || campaign.image || ""; 
+                
+                if (sourceImg.trim() !== "") {
+                    displayImage = sourceImg.trim();
+                    // Convert Google Drive view links to thumbnail links
+                    if (displayImage.includes("drive.google.com/uc?id=")) {
+                        let fileId = displayImage.split("id=")[1].split("&")[0];
+                        displayImage = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w1000";
+                    }
+                }
+
+                let adminBadge = "";
+                if (campaign.adminStatus === "Approved" || campaign.verified === true || campaign.verified === "true") {
+                    adminBadge = `<span style="background:#e3fcef; color:#0b8a38; border:1px solid #0b8a38; font-size:11px; padding:2px 8px; border-radius:12px; margin-left:6px; display:inline-block;">✅ Verified</span>`;
+                }
+
+                // 2. Use the new displayImage variable and add an onerror fallback
                 campaignContainer.innerHTML+=`
                 <div class="campaign-card">
-                <img src="${campaign.image || 'images/default.jpg'}" alt="Campaign">
+                <img src="${displayImage}" alt="Campaign" onerror="this.onerror=null; this.src='images/default.jpg';">
                 <div class="campaign-info">
-                <h3>${campaign.gift}</h3>
+                <h3>${campaign.gift} ${adminBadge}</h3>
                 <p>For ${campaign.receiver} ❤️</p>
+
                 <div class="progress">
                 <div class="fill" style="width:${percent}%"></div>
                 </div>

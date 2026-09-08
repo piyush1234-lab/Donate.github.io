@@ -1,7 +1,7 @@
 /*=====================================
       API ENDPOINT (Single Declaration)
 =====================================*/
-const API_URL = "https://script.google.com/macros/s/AKfycbxyVajhdo-ZT_N5px_hqM2fFWNqpAu3yw6YRZDhK0_3jQ_eLdzKYhnvyfeQyxuGP_jS/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbw1_v-AlR_pbcY7ixg6yudi3qW0yzeTXQJzKSL0keggjJIbPUzD4r9JXBmvYV4CL3yn/exec";
 
 /*=====================================
         LOGIN CHECK
@@ -498,13 +498,12 @@ loadCampaigns();
 /*=====================================
       LOAD CAMPAIGNS
 =====================================*/
-async function loadCampaigns(){
-    if(!campaignContainer) return;
+async function loadCampaigns() {
+    if (!campaignContainer) return;
 
-    // 👉 SHOW LOADER IMMEDIATELY 
     showPageLoader("Fetching Campaigns...");
 
-    campaignContainer.innerHTML=`
+    campaignContainer.innerHTML = `
     <div class="glass" style="padding:30px;text-align:center;">
     <p>Loading live campaigns... ⏳</p>
     </div>`;
@@ -519,20 +518,21 @@ async function loadCampaigns(){
         });
         const result = await response.json();
 
-        if(result.status === "Success") {
-            // Map DB fields back to your legacy format so Analytics/Stats don't break
+        if (result.status === "Success") {
             campaigns = result.data.map(c => ({
                 ...c,
-                target: c.targetAmount,
-                raised: c.raisedAmount,
-                donors: c.donorsCount,
-                image: c.giftImageUrl
+                // Fallbacks to handle naming inconsistencies between frontend and backend
+                giftName: c.giftName || c.gift || c.title || c.campaignName || "Campaign",
+                target: c.targetAmount || c.target || 0,
+                raised: c.raisedAmount || c.raised || 0,
+                donors: c.donorsCount || c.donors || 0,
+                image: c.giftImageUrl || c.image || ""
             }));
-            
-            campaignContainer.innerHTML="";
 
-            if(campaigns.length===0){
-                campaignContainer.innerHTML=`
+            campaignContainer.innerHTML = "";
+
+            if (campaigns.length === 0) {
+                campaignContainer.innerHTML = `
                 <div class="glass" style="padding:30px;text-align:center;">
                 <h3>No Campaigns Yet ❤️</h3>
                 <p>Create your first campaign.</p>
@@ -540,67 +540,91 @@ async function loadCampaigns(){
                 updateDashboardStats();
                 return;
             }
-            
-                                    campaigns.forEach((campaign,index)=>{
+
+            campaigns.forEach((campaign) => {
                 let percent = campaign.target > 0 ? Math.round((campaign.raised / campaign.target) * 100) : 0;
-                if(percent > 100) percent = 100;
-                
-                // 1. Properly extract and convert the image link
-                let displayImage = 'images/default.jpg';
-                let sourceImg = campaign.giftImageUrl || campaign.image || ""; 
-                
-                if (sourceImg.trim() !== "") {
-                    displayImage = sourceImg.trim();
-                    // Convert Google Drive view links to thumbnail links
-                    if (displayImage.includes("drive.google.com/uc?id=")) {
-                        let fileId = displayImage.split("id=")[1].split("&")[0];
-                        displayImage = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w1000";
+                if (percent > 100) percent = 100;
+
+                // --- Improved Image URL Formatting (fallback aligned with campaign.js) ---
+                let sourceImg = (campaign.image || "").trim();
+                let displayImage = 'images/teddy.jpg'; 
+
+                if (sourceImg !== "") {
+                    displayImage = sourceImg;
+                    // Handle all variations of Google Drive URLs
+                    if (displayImage.includes("drive.google.com")) {
+                        let fileId = "";
+                        if (displayImage.includes("/file/d/")) {
+                            fileId = displayImage.split("/file/d/")[1].split("/")[0];
+                        } else if (displayImage.includes("id=")) {
+                            fileId = displayImage.split("id=")[1].split("&")[0];
+                        }
+
+                        if (fileId) {
+                            displayImage = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+                        }
                     }
                 }
 
-                let adminBadge = "";
-                if (campaign.adminStatus === "Approved" || campaign.verified === true || campaign.verified === "true") {
-                    adminBadge = `<span style="background:#e3fcef; color:#0b8a38; border:1px solid #0b8a38; font-size:11px; padding:2px 8px; border-radius:12px; margin-left:6px; display:inline-block;">✅ Verified</span>`;
+                // Verification check — same admin verification logic as campaign.js's renderCampaignPage()
+                let isVerified = Boolean(campaign.verified) && 
+                                 String(campaign.verified).toLowerCase() !== "false" && 
+                                 String(campaign.verified).trim() !== "";
+
+                if (campaign.adminStatus === "Approved") {
+                    isVerified = true;
                 }
 
-                // 2. Use the new displayImage variable and add an onerror fallback
-                campaignContainer.innerHTML+=`
-                <div class="campaign-card">
-                <img src="${displayImage}" alt="Campaign" onerror="this.onerror=null; this.src='images/default.jpg';">
-                <div class="campaign-info">
-                <h3>${campaign.gift} ${adminBadge}</h3>
-                <p>For ${campaign.receiver} ❤️</p>
+                let adminBadge = "";
+                if (isVerified) {
+                    adminBadge = `<span style="display:inline-flex;align-items:center;gap:4px;background:#e8f5e9;color:#2e7d32;font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;margin-left:8px;">✅ Admin Verified</span>`;
+                }
 
-                <div class="progress">
-                <div class="fill" style="width:${percent}%"></div>
-                </div>
-                <span>₹${campaign.raised || 0} / ₹${campaign.target}</span>
-                <div class="campaign-buttons">
-                <button onclick="window.location.href='campaigns.html?id=${campaign.campaignId}'">👀 View</button>
-                <button onclick="editCampaign('${campaign.campaignId}')">✏ Edit</button>
-                <button onclick="campaignAnalytics('${campaign.campaignId}')">📊 Analytics</button>
-                <button onclick="shareCampaign('${campaign.campaignId}')">📤 Share</button>
-                <button onclick="deleteCampaign('${campaign.campaignId}')">🗑 Delete</button>
-                </div>
-               </div>
+                // Hidden-by-admin check — same status flag campaign.js checks (ADMIN FIX 1) to block public viewers.
+                // The owner still needs to see their own campaign here, just with a clear heads-up why it's not public.
+                let isHiddenByAdmin = campaign.status === "Hidden";
+                let hiddenBadge = "";
+                if (isHiddenByAdmin) {
+                    hiddenBadge = `<span style="display:inline-flex;align-items:center;gap:4px;background:#fdecea;color:#c62828;font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;margin-left:6px;">🚫 Hidden by Admin</span>`;
+                }
+
+                // Render card using resolved giftName and robust fallback placeholder
+                campaignContainer.innerHTML += `
+                <div class="campaign-card">
+                    <img src="${displayImage}" alt="Campaign" onerror="this.onerror=null; this.src='https://placehold.co/600x400/ff4d8d/ffffff?text=GiftBloom';">
+                    <div class="campaign-info">
+                        <h3>${campaign.giftName} ${adminBadge}${hiddenBadge}</h3>
+                        <p>For ${campaign.receiver || "Someone Special"} ❤️</p>
+
+                        <div class="progress">
+                            <div class="fill" style="width:${percent}%"></div>
+                        </div>
+                        <span>₹${campaign.raised || 0} / ₹${campaign.target}</span>
+                        <div class="campaign-buttons">
+                            <button onclick="window.location.href='campaigns.html?id=${campaign.campaignId}'">👀 View</button>
+                            <button onclick="editCampaign('${campaign.campaignId}')">✏ Edit</button>
+                            <button onclick="campaignAnalytics('${campaign.campaignId}')">📊 Analytics</button>
+                            <button onclick="shareCampaign('${campaign.campaignId}')">📤 Share</button>
+                            <button onclick="deleteCampaign('${campaign.campaignId}')">🗑 Delete</button>
+                        </div>
+                    </div>
                 </div>`;
             });
-            
-            // Update surrounding UI elements now that data has arrived
+
             updateDashboardStats();
-            if(typeof loadProfileStats === 'function') loadProfileStats();
-            if(typeof loadCampaignListForAnalytics === 'function') loadCampaignListForAnalytics();
+            if (typeof loadProfileStats === 'function') loadProfileStats();
+            if (typeof loadCampaignListForAnalytics === 'function') loadCampaignListForAnalytics();
 
         } else {
-            campaignContainer.innerHTML=`<div class="glass" style="padding:30px;text-align:center;"><p>❌ ${result.message}</p></div>`;
+            campaignContainer.innerHTML = `<div class="glass" style="padding:30px;text-align:center;"><p>❌ ${result.message}</p></div>`;
         }
     } catch (error) {
-        campaignContainer.innerHTML=`<div class="glass" style="padding:30px;text-align:center;"><p>❌ Network Error.</p></div>`;
+        campaignContainer.innerHTML = `<div class="glass" style="padding:30px;text-align:center;"><p>❌ Network Error.</p></div>`;
     } finally {
-        // 👉 HIDE LOADER WHEN DATA ARRIVES OR FAILS
         hidePageLoader();
     }
 }
+
 
 /*=====================================
       DASHBOARD STATS

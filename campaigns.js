@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbxyVajhdo-ZT_N5px_hqM2fFWNqpAu3yw6YRZDhK0_3jQ_eLdzKYhnvyfeQyxuGP_jS/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbw1_v-AlR_pbcY7ixg6yudi3qW0yzeTXQJzKSL0keggjJIbPUzD4r9JXBmvYV4CL3yn/exec";
 
 // Put this on public pages (e.g., campaign.html)
 const currentUser = JSON.parse(localStorage.getItem("currentUser"));
@@ -311,14 +311,24 @@ function renderCampaignPage() {
     }  
         
         // ADMIN FIX 2: ADD "VERIFIED" BADGE NEXT TO TITLE
-    let titleText = currentCampaign.gift || currentCampaign.giftName || "Gift Campaign";
-    
-    document.getElementById("giftName").innerHTML = `
-        <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
-            <span>${titleText}</span>
-            ${currentCampaign.verified ? `<span style="display:inline-flex;align-items:center;gap:4px;background:#e8f5e9;color:#2e7d32;font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;margin-left:8px;">✅ Admin Verified</span>` : ""}
-        </div>
-    `;
+let titleText = currentCampaign.gift || currentCampaign.giftName || "Gift Campaign";
+
+// Apply the same strict checking logic used in the Dashboard
+let isVerified = Boolean(currentCampaign.verified) && 
+                 String(currentCampaign.verified).toLowerCase() !== "false" && 
+                 String(currentCampaign.verified).trim() !== "";
+
+if (currentCampaign.adminStatus === "Approved") {
+    isVerified = true;
+}
+
+document.getElementById("giftName").innerHTML = `
+    <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <span>${titleText}</span>
+        ${isVerified ? `<span style="display:inline-flex;align-items:center;gap:4px;background:#e8f5e9;color:#2e7d32;font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;margin-left:8px;">✅ Admin Verified</span>` : ""}
+    </div>
+`;
+
 
     document.getElementById("campaignStory").innerText = currentCampaign.story || "No story provided.";
 

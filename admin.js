@@ -1,5 +1,5 @@
 /*======== GLOBAL API CONFIG ========*/
-const API_URL = "https://script.google.com/macros/s/AKfycbxyVajhdo-ZT_N5px_hqM2fFWNqpAu3yw6YRZDhK0_3jQ_eLdzKYhnvyfeQyxuGP_jS/exec"; 
+const API_URL = "https://script.google.com/macros/s/AKfycbw1_v-AlR_pbcY7ixg6yudi3qW0yzeTXQJzKSL0keggjJIbPUzD4r9JXBmvYV4CL3yn/exec"; 
 
 
 
@@ -466,7 +466,11 @@ function loadCampaigns() {
                     
                     <!-- 🌟 Inject the dynamic button text here -->
                     <button onclick="hideCampaign(${index})">${hideBtnText}</button>
-                  ${campaign.status === 'Pending' ? `<button onclick="approveCampaign('${campaign.campaignId}')">✅ Approve</button>` : ''}
+                  ${(campaign.adminStatus === 'Approved' || campaign.verified === true || campaign.adminApproved === true)
+    ? `<button onclick="toggleApproveCampaign('${campaign.campaignId}', true)" style="background: #ff9800;">❌ Unapprove</button>`
+    : `<button onclick="toggleApproveCampaign('${campaign.campaignId}', false)" style="background: #28a745;">✅ Approve</button>`
+}
+
 ${campaign.status === 'Blocked' 
   ? `<button onclick="unblockCampaign('${campaign.campaignId}')">🔓 Unblock</button>` 
   : `<button onclick="blockCampaignPrompt('${campaign.campaignId}')">🚫 Block</button>`
@@ -484,11 +488,32 @@ ${campaign.status === 'Blocked'
     if (pageInfo) pageInfo.innerText = `Page ${pageState.campaigns} of ${totalPages}`;
 }
 
-async function approveCampaign(campaignId) {
-    if (!confirm("Approve this campaign and make it public?")) return;
-    const response = await fetchAPI("updateCampaignStatus", { campaignId: campaignId, status: "Active", token: localStorage.getItem("adminToken") });
-    if (response && response.status === "Success") { alert("✅ Campaign approved and is now live."); loadCampaigns(); }
-    else { alert("❌ " + (response?.message || "Failed to approve.")); }
+async function toggleApproveCampaign(campaignId, isApproved) {
+    const actionText = isApproved ? "unapprove" : "approve";
+    if (!confirm(`Are you sure you want to ${actionText} this campaign?`)) return;
+
+    const newVerifiedState = !isApproved;
+    const response = await fetchAPI("toggleCampaignVerification", { 
+        campaignId: campaignId, 
+        verified: newVerifiedState, 
+        token: localStorage.getItem("adminToken") 
+    });
+
+    if (response && response.status === "Success") {
+        alert(newVerifiedState ? "✅ Campaign approved & verified!" : "⚠️ Campaign unapproved.");
+        
+        // Update local memory state
+        const camp = campaigns.find(c => c.campaignId === campaignId);
+        if (camp) {
+            camp.verified = newVerifiedState;
+            camp.adminStatus = newVerifiedState ? "Approved" : "Pending";
+            camp.adminApproved = newVerifiedState;
+        }
+        
+        loadCampaigns();
+    } else {
+        alert("❌ " + (response?.message || "Failed to update approval status."));
+    }
 }
 
 async function blockCampaignPrompt(campaignId) {
@@ -528,21 +553,27 @@ document.getElementById("campaignPopupStatus").innerText = campaign.status || "A
     // 🌟 LINK THE POPUP BUTTONS 🌟
     
     // 1. Approve Button
-    const approveBtn = document.getElementById("approveCampaign");
-    if(campaign.adminApproved) {
-        approveBtn.innerHTML = "✅ Approved";
-        approveBtn.disabled = true;
+    // 1. Approve / Unapprove Button in Popup
+const approveBtn = document.getElementById("approveCampaign");
+if (approveBtn) {
+    const isApproved = campaign.adminApproved || campaign.verified === true || campaign.adminStatus === "Approved";
+
+    if (isApproved) {
+        approveBtn.innerHTML = "❌ Unapprove";
+        approveBtn.style.background = "#ff9800";
     } else {
         approveBtn.innerHTML = "✅ Approve";
-        approveBtn.disabled = false;
-        approveBtn.onclick = function() {
-            campaigns[index].adminApproved = true;
-            localStorage.setItem("myCampaigns", JSON.stringify(campaigns));
-            alert("✅ Campaign Approved! A badge will now show on the public page.");
-            document.getElementById("campaignPopup").classList.add("hidden");
-            loadCampaigns(); // Refresh admin table
-        };
+        approveBtn.style.background = "#28a745";
     }
+
+    approveBtn.disabled = false;
+    approveBtn.onclick = function() {
+        toggleApproveCampaign(campaign.campaignId, isApproved);
+        document.getElementById("campaignPopup").classList.add("hidden");
+        loadCampaign();
+    };
+}
+
 
     // 2. Hide Button
     const hideBtn = document.getElementById("hideCampaignBtn");

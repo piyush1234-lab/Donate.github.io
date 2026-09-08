@@ -1,7 +1,7 @@
 /*=====================================
       GIFTBLOOM API CONNECTION
 =====================================*/
-const API_URL = "https://script.google.com/macros/s/AKfycbxyVajhdo-ZT_N5px_hqM2fFWNqpAu3yw6YRZDhK0_3jQ_eLdzKYhnvyfeQyxuGP_jS/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbw1_v-AlR_pbcY7ixg6yudi3qW0yzeTXQJzKSL0keggjJIbPUzD4r9JXBmvYV4CL3yn/exec";
 
 /*=====================================
         MOBILE MENU

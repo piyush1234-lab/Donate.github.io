@@ -1,15 +1,18 @@
 /*=====================================
     GIFTBLOOM API CONNECTION
 =====================================*/
-const API_URL = "https://script.google.com/macros/s/AKfycbw1_v-AlR_pbcY7ixg6yudi3qW0yzeTXQJzKSL0keggjJIbPUzD4r9JXBmvYV4CL3yn/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyspj1ezHNVn6e0AFTDqhPNHJAnclSB9sbVCLeVOfRIla_RpWuBVJr7jViB1zm-RyD-/exec";
 
 /*=====================================
         STRICT LOGIN CHECK 
 =====================================*/
-// Put this on protected pages
-const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+// Check both localStorage (Remember Me) and sessionStorage (standard login)
+const isPersistentLogin = localStorage.getItem("isLoggedIn") === "true";
+const isSessionLogin = sessionStorage.getItem("isLoggedIn") === "true";
+const currentUserStr = localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser");
+const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
 
-if (!currentUser || (!currentUser.userId && !currentUser.id)) {
+if ((!isPersistentLogin && !isSessionLogin) || !currentUser || (!currentUser.userId && !currentUser.id)) {
     alert("You must be logged in to view this page.");
     window.location.href = "login.html";
 }
@@ -19,7 +22,7 @@ if (!currentUser || (!currentUser.userId && !currentUser.id)) {
         FLOATING HEARTS
 =====================================*/
 const hearts = document.querySelector(".hearts");
-for(let i = 0; i < 20; i++){
+for (let i = 0; i < 20; i++) {
     const heart = document.createElement("div");
     heart.className = "heart";
     heart.innerHTML = "❤";
@@ -27,7 +30,7 @@ for(let i = 0; i < 20; i++){
     heart.style.fontSize = (12 + Math.random() * 20) + "px";
     heart.style.animationDuration = (8 + Math.random() * 8) + "s";
     heart.style.animationDelay = (Math.random() * 5) + "s";
-    if(hearts) hearts.appendChild(heart);
+    if (hearts) hearts.appendChild(heart);
 }
 
 /*=====================================
@@ -66,9 +69,13 @@ async function fetchCampaignFromAPI() {
     try {
         const response = await fetch(API_URL, {
             method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({
                 action: "getCampaignById",
-                data: { campaignId: currentCampaignId }
+                data: {
+                    campaignId: currentCampaignId,
+                    token: currentUser?.token || ""
+                }
             })
         });
 
@@ -93,7 +100,7 @@ async function fetchCampaignFromAPI() {
       RENDER FETCHED DATA
 =====================================*/
 function renderCampaignDetails() {
-    document.getElementById("giftName").innerText = currentCampaignData.gift || "Amazing Gift";
+    document.getElementById("giftName").innerText = currentCampaignData.gift || currentCampaignData.giftName || "Amazing Gift";
     document.getElementById("receiver").innerText = currentCampaignData.receiver || "Someone Special";
     document.getElementById("campaignId").innerText = currentCampaignId;
 
@@ -101,10 +108,22 @@ function renderCampaignDetails() {
     const imgElement = document.getElementById("giftImage");
     if (currentCampaignData.giftImageBase64) {
         imgElement.src = currentCampaignData.giftImageBase64; 
-    } else if (currentCampaignData.giftImageUrl) {
-        imgElement.src = currentCampaignData.giftImageUrl;
+    } else if (currentCampaignData.giftImageUrl || currentCampaignData.image) {
+        let displayImage = (currentCampaignData.giftImageUrl || currentCampaignData.image || "").trim();
+        if (displayImage.includes("drive.google.com")) {
+            let fileId = "";
+            if (displayImage.includes("/file/d/")) {
+                fileId = displayImage.split("/file/d/")[1].split("/")[0];
+            } else if (displayImage.includes("id=")) {
+                fileId = displayImage.split("id=")[1].split("&")[0];
+            }
+            if (fileId) {
+                displayImage = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+            }
+        }
+        imgElement.src = displayImage;
     } else {
-        imgElement.src = "images/default-gift.png"; // Fallback image if you have one
+        imgElement.src = "images/default-gift.png";
     }
 
     // Construct the Public Share Link
@@ -136,8 +155,7 @@ document.getElementById("copyBtn").onclick = () => {
 document.getElementById("shareBtn").onclick = async () => {
     if (!campaignLink) return;
 
-    // Provide default fallbacks if data is still loading
-    const giftName = currentCampaignData ? currentCampaignData.gift : "a special gift";
+    const giftName = currentCampaignData ? (currentCampaignData.gift || currentCampaignData.giftName) : "a special gift";
     const receiverName = currentCampaignData ? currentCampaignData.receiver : "someone special";
 
     const title = giftName + " ❤️";
@@ -150,7 +168,7 @@ document.getElementById("shareBtn").onclick = async () => {
                 text: text,
                 url: campaignLink
             });
-        } catch(err) {
+        } catch (err) {
             console.log("User cancelled share or error:", err);
         }
     } else {
@@ -169,7 +187,6 @@ document.getElementById("viewBtn").onclick = () => {
 };
 
 document.getElementById("dashboardBtn").onclick = () => {
-    // Note: Changed from "dashboard(combined).html" to standard "dashboard.html"
     window.location.href = "dashboard(combined).html";
 };
 
@@ -184,11 +201,8 @@ initSuccessPage();
 /*=====================================
       BACK BUTTON INTERCEPTION
 =====================================*/
-// Push a state to the history stack when the page loads
 window.history.pushState(null, "", window.location.href);
 
-// Listen for the user clicking the browser's "Back" button
 window.addEventListener("popstate", function () {
-    // Redirect to the dashboard instead of going to the previous page
     window.location.href = "dashboard(combined).html"; 
 });

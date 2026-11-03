@@ -1,7 +1,7 @@
 /*=====================================
       API ENDPOINT (Single Declaration)
 =====================================*/
-const API_URL = "https://script.google.com/macros/s/AKfycbw1_v-AlR_pbcY7ixg6yudi3qW0yzeTXQJzKSL0keggjJIbPUzD4r9JXBmvYV4CL3yn/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyspj1ezHNVn6e0AFTDqhPNHJAnclSB9sbVCLeVOfRIla_RpWuBVJr7jViB1zm-RyD-/exec";
 
 /*=====================================
         LOGIN CHECK
@@ -22,14 +22,11 @@ if (!isPersistentLogin && !isSessionLogin) {
 
 /**
  * Universal Utility function to communicate with Google Apps Script backend
+ * (Global loader.js automatically intercepts fetch() calls to show/hide the loader)
  */
-
 async function sendToBackend(action, payload) {
     try {
         document.body.style.cursor = 'wait';
-        
-        // 👉 TRIGGER LOADER BEFORE CONTACTING DATABASE
-        showPageLoader("Updating... ⏳"); 
 
         const response = await fetch(API_URL, {
             method: 'POST',
@@ -46,10 +43,6 @@ async function sendToBackend(action, payload) {
         document.body.style.cursor = 'default';
         alert("Failed to communicate with the server. Please check your network.");
         return null;
-        
-    } finally {
-        // 👉 HIDE LOADER WHEN FINISHED (Whether Success or Error)
-        hidePageLoader();
     }
 }
 
@@ -59,9 +52,10 @@ async function sendToBackend(action, payload) {
 =====================================*/
 
 async function creatorVerify(index) {
+    const activeUserId = currentUser.userId || currentUser.id;
     const pendingDonations = donations.filter(d => {
         const campaign = campaigns.find(c => (c.campaignId || "") === (d.campaignId || d.campaign));
-        return campaign && campaign.ownerId === currentUser.userId && d.status === "Pending";
+        return (!campaign || campaign.ownerId === activeUserId) && d.status === "Pending";
     });
 
     const payment = pendingDonations[index];
@@ -76,6 +70,7 @@ async function creatorVerify(index) {
         localStorage.setItem("donations", JSON.stringify(donations));
         loadPendingPayments();
         loadPaymentHistory();
+        loadCampaigns();
         alert("✅ Payment successfully verified!");
     } else {
         alert("❌ Verification failed: " + (result?.message || "Unknown error"));
@@ -83,9 +78,10 @@ async function creatorVerify(index) {
 }
 
 async function creatorReject(index) {
+    const activeUserId = currentUser.userId || currentUser.id;
     const pendingDonations = donations.filter(d => {
         const campaign = campaigns.find(c => (c.campaignId || "") === (d.campaignId || d.campaign));
-        return campaign && campaign.ownerId === currentUser.userId && d.status === "Pending";
+        return (!campaign || campaign.ownerId === activeUserId) && d.status === "Pending";
     });
 
     const payment = pendingDonations[index];
@@ -119,210 +115,6 @@ function viewCreatorDonation(index) {
 
 
 /*=====================================
-      CONNECTED PROFILE SAVING
-=====================================*/
-
-async function saveProfile() {
-    currentUser.name = document.getElementById("fullName").value.trim();
-    currentUser.email = document.getElementById("email").value.trim();
-    currentUser.mobile = document.getElementById("mobile").value.trim();
-    currentUser.dob = document.getElementById("dob").value;
-    currentUser.gender = document.getElementById("gender").value;
-    currentUser.bio = document.getElementById("bio").value.trim();
-
-    if(currentUser.name === "" || currentUser.email === "") {
-        alert("Please fill out your name and email.");
-        return;
-    }
-
-    // Send payload to backend Google Sheet
-        // Send payload to backend Google Sheet
-    const result = await sendToBackend('updateUserProfile', {
-        userId: currentUser.id || currentUser.userId,
-        token: currentUser.token,  // 👈 ADD THIS LINE
-        name: currentUser.name,
-        email: currentUser.email,
-        mobile: currentUser.mobile,
-        dob: currentUser.dob,
-        gender: currentUser.gender,
-        bio: currentUser.bio
-    });
-
-    if (result && result.status === "Success") {
-        localStorage.setItem("currentUser", JSON.stringify(currentUser));
-        
-        if(document.getElementById("dashboardUsername"))
-            document.getElementById("dashboardUsername").innerText = currentUser.name;
-        if(document.getElementById("profileUserName"))
-            document.getElementById("profileUserName").innerText = currentUser.name;
-        if(document.getElementById("userEmail"))
-            document.getElementById("userEmail").innerText = currentUser.email;
-
-        alert("Profile updated successfully ❤️");
-    } else {
-        alert("❌ Failed to save profile to database: " + (result?.message || "Server Error"));
-    }
-}
-
-/*=====================================
-      CANVAS PARTICLE HEART LOADER
-=====================================*/
-const loaderCanvas = document.getElementById('loaderCanvas');
-let loaderAnimId;
-
-if (loaderCanvas) {
-    const ctx = loaderCanvas.getContext('2d');
-    const cw = loaderCanvas.width = 300;
-    const ch = loaderCanvas.height = 300;
-    const cx = cw / 2;
-    const cy = ch / 2 - 20;
-
-    // --- Dynamic Name Logic ---
-    const loggedInUser = ""; // e.g., "Sarah"
-    const nameEl = document.getElementById('loaderName');
-    if (nameEl) {
-        nameEl.textContent = loggedInUser ? loggedInUser : "Loading...";
-    }
-
-    const HEART_RES = 256;
-    const hpx = new Float32Array(HEART_RES);
-    const hpy = new Float32Array(HEART_RES);
-
-    // Generate mathematical heart boundaries
-    for (let i = 0; i < HEART_RES; i++) {
-        const t = (i / HEART_RES) * Math.PI * 2;
-        hpx[i] = 16 * Math.pow(Math.sin(t), 3);
-        hpy[i] = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-    }
-
-    const N = 350; 
-    const particles = [];
-    const colors = ['#ff4d8d', '#4740ff', '#ff1493', '#ff84b7', '#ffb3d9', '#ff40a8']; 
-
-    // Start particles from center
-    for (let i = 0; i < N; i++) {
-        particles.push({
-            x: cx, 
-            y: cy, 
-            vx: (Math.random() - 0.5) * 15, 
-            vy: (Math.random() - 0.5) * 15, 
-            size: Math.random() * 1.2 + 0.8,
-            targetIndex: (i * 7) % HEART_RES,
-            color: colors[Math.floor(Math.random() * colors.length)],
-            offsetT: Math.random() * Math.PI * 2
-        });
-    }
-
-    function animateLoader(time) {
-        // Transparent trail trick
-        ctx.globalCompositeOperation = 'destination-out';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
-        ctx.fillRect(0, 0, cw, ch);
-
-        // Switch to glowing blend mode for particles
-        ctx.globalCompositeOperation = 'lighter';
-
-        const cycle = (time * 0.0013) % 1;
-        let pulse = 0;
-        if (cycle < 0.12) pulse = Math.sin((cycle / 0.12) * Math.PI);
-        else if (cycle > 0.18 && cycle < 0.35) pulse = 0.5 * Math.sin(((cycle - 0.18) / 0.17) * Math.PI);
-        const hs = 2.25 * (1 + pulse * 0.15); 
-
-        // The active index travels from 0 to 256 around the heart path
-        // Adjust the "0.15" multiplier to change the speed of the traveling light
-        const activeIndex = (time * 0.10) % HEART_RES; 
-
-        for (let i = 0; i < N; i++) {
-            let p = particles[i];
-            let tx = cx + hpx[p.targetIndex] * hs;
-            let ty = cy + hpy[p.targetIndex] * hs;
-
-            p.vx += (tx - p.x) * 0.08; 
-            p.vy += (ty - p.y) * 0.08;
-            
-            p.vx += Math.sin(time * 0.002 + p.offsetT) * 0.03;
-            p.vy += Math.cos(time * 0.002 + p.offsetT) * 0.03;
-
-            p.vx *= 0.75; 
-            p.vy *= 0.75;
-
-            p.x += p.vx;
-            p.y += p.vy;
-
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-
-            // Calculate how close this particle is to the traveling light
-            let diff = (activeIndex - p.targetIndex + HEART_RES) % HEART_RES;
-
-            // If the particle is within 25 steps behind the active light index, illuminate it!
-            if (diff < 25) {
-                // Fades out from 1 at the head, to 0 at the tail
-                const intensity = 1 - (diff / 25); 
-                
-                ctx.fillStyle = '#ff4d8d '; // White core for the light
-                ctx.shadowBlur = 15 * intensity; 
-                ctx.shadowColor = '#ff4d8d'; // Main pink glow
-                ctx.fill();
-                
-                ctx.shadowBlur = 0; // Reset for other particles
-            } else {
-                // Draw normal unlit particle
-                ctx.fillStyle = p.color;
-                ctx.fill();
-            }
-        }
-
-        loaderAnimId = requestAnimationFrame(animateLoader);
-    }
-    loaderAnimId = requestAnimationFrame(animateLoader);
-}
-
-/*=====================================
-      DYNAMIC LOADER SYNC (REUSABLE)
-=====================================*/
-function showPageLoader(customText = "Loading...") {
-    const loader = document.getElementById("pageLoader");
-    const nameEl = document.getElementById("loaderName"); 
-    
-    if (loader) {
-        if (nameEl) {
-            // Check if we have a valid logged-in user with a name
-            if (typeof currentUser !== 'undefined' && currentUser.name && currentUser.name.trim() !== "") {
-                // Extract just the first name (splits the string at the space and grabs the first item)
-                const firstName = currentUser.name.trim().split(" ")[0];
-                nameEl.textContent = firstName;
-            } else {
-                // Fallback: show the action text (e.g., "Fetching Campaigns...") if no name exists
-                nameEl.textContent = customText;
-            }
-        }
-        
-        loader.style.display = "flex"; // Bring the loader back
-        
-        // Slight delay to allow CSS transition to fade it back in smoothly
-        setTimeout(() => {
-            loader.classList.remove("fade-out");
-        }, 10);
-    }
-}
-
-function hidePageLoader() {
-    const loader = document.getElementById("pageLoader");
-    if (loader) {
-        loader.classList.add("fade-out");
-        
-        // Wait for CSS transition to finish (600ms) then hide from layout
-        setTimeout(() => {
-            loader.style.display = "none";
-        }, 600); 
-    }
-}
-
-
-
-
-/*=====================================
       USER GREETING SYSTEM
 =====================================*/
 async function loadUserGreeting(userEmail) {
@@ -332,6 +124,7 @@ async function loadUserGreeting(userEmail) {
     try {
         const response = await fetch(API_URL, {
             method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({
                 action: "getUserGreeting",
                 data: { email: userEmail }
@@ -355,27 +148,25 @@ async function loadUserGreeting(userEmail) {
 }
 
 
-
 /*=====================================
       LOAD USER
 =====================================*/
 
-let currentUser = JSON.parse(localStorage.getItem("currentUser")) || {};
+let currentUserStr = localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser");
+let currentUser = currentUserStr ? JSON.parse(currentUserStr) : {};
 
 if (currentUser && (currentUser.userId || currentUser.id)){
 
-    // NEW: Check the login flag and change the greeting
-        // NEW: Check the login flag and change the greeting
     if(document.getElementById("welcomeGreeting")){
-        if(localStorage.getItem("isNewLogin") === "true"){
+        if(localStorage.getItem("isNewLogin") === "true" || sessionStorage.getItem("isNewLogin") === "true"){
             document.getElementById("welcomeGreeting").innerText = "Welcome,";
         } else {
             document.getElementById("welcomeGreeting").innerText = "Welcome Back,";
         }
     }
 
-if(document.getElementById("userId")) {
-        document.getElementById("userId").value = currentUser.userId 
+    if(document.getElementById("userId")) {
+        document.getElementById("userId").value = currentUser.userId || currentUser.id;
     }
     if(document.getElementById("dashboardUsername"))
         document.getElementById("dashboardUsername").innerText=currentUser.name;
@@ -395,7 +186,7 @@ if(document.getElementById("userId")) {
     if(document.getElementById("mobile"))
         document.getElementById("mobile").value=currentUser.mobile || "";
 
-        if(document.getElementById("dob")) {
+    if(document.getElementById("dob")) {
         let formattedDob = "";
         if (currentUser.dob) {
             try {
@@ -416,6 +207,7 @@ if(document.getElementById("userId")) {
         document.getElementById("bio").value=currentUser.bio || "";
 
 }
+
 /*=====================================
       MOBILE MENU
 =====================================*/
@@ -427,6 +219,7 @@ const menuBtn=document.getElementById("menuBtn");
 
 const menu=document.getElementById("menu");
 
+if (menuBtn && menu) {
 menuBtn.addEventListener("click",(e)=>{
 
 e.stopPropagation();
@@ -449,6 +242,7 @@ menu.classList.remove("show");
 }
 
 });
+}
 
 /*=====================================
       FLOATING HEARTS
@@ -456,6 +250,7 @@ menu.classList.remove("show");
 
 const hearts=document.querySelector(".hearts");
 
+if (hearts) {
 for(let i=0;i<20;i++){
 
 let heart=document.createElement("div");
@@ -478,6 +273,7 @@ Math.random()*5+"s";
 hearts.appendChild(heart);
 
 }
+}
 
 
 /*=====================================
@@ -490,18 +286,15 @@ document.getElementById("campaignContainer");
 
 let campaigns = [];
 
-const donations =
+let donations =
 JSON.parse(localStorage.getItem("donations")) || [];
 
-loadCampaigns();
 
 /*=====================================
       LOAD CAMPAIGNS
 =====================================*/
 async function loadCampaigns() {
     if (!campaignContainer) return;
-
-    showPageLoader("Fetching Campaigns...");
 
     campaignContainer.innerHTML = `
     <div class="glass" style="padding:30px;text-align:center;">
@@ -511,6 +304,7 @@ async function loadCampaigns() {
     try {
         const response = await fetch(API_URL, {
             method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({
                 action: "getUserCampaigns",
                 data: { userId: currentUser.id || currentUser.userId }
@@ -614,14 +408,15 @@ async function loadCampaigns() {
             updateDashboardStats();
             if (typeof loadProfileStats === 'function') loadProfileStats();
             if (typeof loadCampaignListForAnalytics === 'function') loadCampaignListForAnalytics();
+            loadPendingPayments();
+            loadPaymentHistory();
+            loadMessages();
 
         } else {
             campaignContainer.innerHTML = `<div class="glass" style="padding:30px;text-align:center;"><p>❌ ${result.message}</p></div>`;
         }
     } catch (error) {
         campaignContainer.innerHTML = `<div class="glass" style="padding:30px;text-align:center;"><p>❌ Network Error.</p></div>`;
-    } finally {
-        hidePageLoader();
     }
 }
 
@@ -629,8 +424,6 @@ async function loadCampaigns() {
 /*=====================================
       DASHBOARD STATS
 =====================================*/
-
-
 
 function updateDashboardStats(){
 
@@ -671,10 +464,6 @@ statCards[3].innerText=totalViews;
 /*=====================================
       DELETE CAMPAIGN
 =====================================*/
-
-/*=====================================
-      DELETE CAMPAIGN
-=====================================*/
 async function deleteCampaign(campaignId){
 
 if(!confirm("Delete this campaign permanently?")){
@@ -684,9 +473,10 @@ return;
 try {
     const response = await fetch(API_URL, {
         method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({
             action: "deleteCampaign",
-            data: { campaignId: campaignId, userId: currentUser.id || currentUser.userId }
+            data: { campaignId: campaignId, userId: currentUser.id || currentUser.userId, token: currentUser.token }
         })
     });
     
@@ -709,12 +499,16 @@ function editCampaign(campaignId) {
     let campaignToEdit = campaigns.find(c => c.campaignId === campaignId);
     if(!campaignToEdit) return;
     
-    // Save the data and the exact ID
+    const uid = currentUser.userId || currentUser.id || "";
+
+    // Save the data and the exact ID (supports both legacy keys and per-user draft keys in create.js)
     localStorage.setItem("newCampaign", JSON.stringify(campaignToEdit));
     localStorage.setItem("editingId", campaignId); 
-    
-    // 🌟 THE FIX: Reset the 6-hour timer right now!
     localStorage.setItem("draftTime", Date.now());
+    if (uid) {
+        localStorage.setItem("draftData_" + uid, JSON.stringify(campaignToEdit));
+        localStorage.setItem("draftTime_" + uid, Date.now());
+    }
     
     // Send the user to the form
     window.location.href = "create.html";
@@ -732,8 +526,9 @@ function campaignAnalytics(campaignId){
     loadAnalytics(campaignId); 
 }
 
-// payment verification
-
+/*=====================================
+      PAYMENT VERIFICATION
+=====================================*/
 
 function loadPendingPayments(){
 
@@ -741,6 +536,7 @@ if(!paymentList) return;
 
 paymentList.innerHTML="";
 
+const activeUserId = currentUser.userId || currentUser.id;
 
 const pendingDonations = donations.filter(d=>{
 
@@ -752,8 +548,7 @@ const campaign = campaigns.find(c=>
 
 );
 
-return campaign &&
-campaign.ownerId===currentUser.userId &&
+return (!campaign || campaign.ownerId===activeUserId) &&
 d.status==="Pending";
 
 });
@@ -827,17 +622,14 @@ function shareCampaign(campaignId){
 const c = campaigns.find(c => c.campaignId === campaignId);
 if(!c) return;
 
-const url=
-
-window.location.origin+
-
-"/campaign.html?id="+campaignId;
+const baseURL = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
+const url = baseURL + "/campaigns.html?id=" + campaignId;
 
 if(navigator.share){
 
 navigator.share({
 
-title:c.gift,
+title:c.gift || c.giftName,
 
 text:
 
@@ -864,7 +656,6 @@ alert(
 /*=====================================
       QUICK ACTIONS
 =====================================*/
-
 
 document.querySelectorAll(".actions button")
 
@@ -902,20 +693,7 @@ openPage("notifications");
 }
 
 /*=====================================
-      SAVE PROFILE
-=====================================*/
-
-const saveProfileBtn=
-document.getElementById("saveProfile");
-
-if(saveProfileBtn){
-
-saveProfileBtn.onclick=saveProfile;
-
-}
-
-/*=====================================
-      EDIT PROFILE
+      EDIT PROFILE (FROM SETTINGS)
 =====================================*/
 
 const editProfileBtn=
@@ -926,80 +704,6 @@ if(editProfileBtn){
 editProfileBtn.onclick=()=>{
 
 openPage("profile");
-
-};
-
-}
-
-/*=====================================
-      CHANGE PASSWORD
-=====================================*/
-
-const profilePassword=
-
-document.getElementById(
-
-"profileChangePassword"
-
-);
-
-if(profilePassword){
-
-profilePassword.onclick=()=>{
-
-alert(
-
-"This will be connected to Google Apps Script."
-
-);
-
-};
-
-}
-
-const settingsPassword=
-
-document.getElementById(
-
-"settingsChangePassword"
-
-);
-
-if(settingsPassword){
-
-settingsPassword.onclick=()=>{
-
-alert(
-
-"This will be connected to Google Apps Script."
-
-);
-
-};
-
-}
-
-/*=====================================
-      VERIFY EMAIL
-=====================================*/
-
-const verifyEmail=
-
-document.getElementById(
-
-"verifyEmail"
-
-);
-
-if(verifyEmail){
-
-verifyEmail.onclick=()=>{
-
-alert(
-
-"Email verification module will be added after Apps Script integration."
-
-);
 
 };
 
@@ -1024,58 +728,6 @@ verifyMobile.onclick=()=>{
 alert(
 
 "Mobile verification module will be added after Apps Script integration."
-
-);
-
-};
-
-}
-
-/*=====================================
-      CHANGE EMAIL
-=====================================*/
-
-const changeEmail=
-
-document.getElementById(
-
-"changeEmail"
-
-);
-
-if(changeEmail){
-
-changeEmail.onclick=()=>{
-
-alert(
-
-"Change Email will be handled by Google Apps Script."
-
-);
-
-};
-
-}
-
-/*=====================================
-      CHANGE MOBILE
-=====================================*/
-
-const changeMobile=
-
-document.getElementById(
-
-"changeMobile"
-
-);
-
-if(changeMobile){
-
-changeMobile.onclick=()=>{
-
-alert(
-
-"Change Mobile will be handled by Google Apps Script."
 
 );
 
@@ -1381,41 +1033,26 @@ deleteAccountBtn.onclick=deleteAccount;
 
 }
 
-function deleteAccount(){
+async function deleteAccount(){
 
-const confirmDelete=confirm(
+const userInput = prompt("WARNING: This will permanently delete your account, campaigns, Drive images, expenses, donations, and messages. Type 'DELETE' to confirm:");
 
-"Delete your GiftBloom account permanently?"
-
-);
-
-if(!confirmDelete){
-
-return;
-
+if (userInput === "DELETE") {
+    const result = await sendToBackend('deleteUser', {
+        userId: currentUser.userId || currentUser.id,
+        token: currentUser.token
+    });
+    if (result && result.status === "Success") {
+        localStorage.clear();
+        sessionStorage.clear();
+        alert("✅ Your account and all associated data have been permanently deleted.");
+        window.location.href = "index.html";
+    } else {
+        alert("❌ Failed to delete account: " + (result?.message || "Server error"));
+    }
+} else if (userInput !== null) {
+    alert("Action cancelled. Your account is safe.");
 }
-
-alert(
-
-"This feature will be enabled after Google Apps Script integration."
-
-);
-
-/*
-
-Future:
-
-Delete User
-
-Delete Campaigns
-
-Delete Donations
-
-Delete Images
-
-Destroy Session
-
-*/
 
 }
 
@@ -1525,17 +1162,23 @@ openPage("profile");
 
 async function logout() {
     try {
-        await fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "logoutSession", data: { token: currentUser?.token } }) });
+        await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "logoutSession", data: { token: currentUser?.token } })
+        });
     } catch (e) { console.log("Session cleanup failed: " + e); }
     localStorage.clear();
     sessionStorage.clear();
     window.location.href = "login.html";
 }
 
+if(document.getElementById("logoutBtn")){
 document.getElementById("logoutBtn").onclick=(e)=>{
 e.preventDefault();
 logout();
 };
+}
 
 if(document.getElementById("profileLogout")){
 document.getElementById("profileLogout").onclick = logout;
@@ -1663,7 +1306,7 @@ document
 
 link.addEventListener("click",()=>{
 
-menu.classList.remove("show");
+if (menu) menu.classList.remove("show");
 
 });
 
@@ -1679,7 +1322,7 @@ document.addEventListener(
 
 (e)=>{
 
-if(e.key==="Escape"){
+if(e.key==="Escape" && menu){
 
 menu.classList.remove("show");
 
@@ -1699,7 +1342,7 @@ function refreshDashboard(){
     loadSettings();
     loadMessages();
     loadCampaignListForAnalytics(); 
-    }
+}
 
 
 function openPage(pageId){
@@ -1716,9 +1359,6 @@ window.scrollTo({top:0,behavior:"smooth"});
 }
 
 }
-
-
-
 
 
 /*=====================================
@@ -1758,6 +1398,7 @@ function formatRelativeTime(isoString) {
 }
 
 function loadNotifications(filter = "all") {
+    if (!list) return;
     list.innerHTML = "";
     let data = notifications;
     if (filter === "unread") data = notifications.filter(n => !n.read);
@@ -1800,33 +1441,47 @@ document.querySelectorAll(".filter").forEach(btn => {
     };
 });
 
-document.getElementById("markAllRead").onclick = async () => {
-    const result = await sendToBackend('markAllNotificationsRead', { token: currentUser.token });
-    if (result && result.status === "Success") {
-        notifications.forEach(n => n.read = true);
-        updateNotificationBadge();
-        loadNotifications();
-    }
-};
+if (document.getElementById("markAllRead")) {
+    document.getElementById("markAllRead").onclick = async () => {
+        const result = await sendToBackend('markAllNotificationsRead', { token: currentUser.token });
+        if (result && result.status === "Success") {
+            notifications.forEach(n => n.read = true);
+            updateNotificationBadge();
+            loadNotifications();
+        }
+    };
+}
 
-document.getElementById("clearAll").onclick = async () => {
-    if (!confirm("Clear all notifications?")) return;
-    const result = await sendToBackend('clearNotifications', { token: currentUser.token });
-    if (result && result.status === "Success") {
-        notifications = [];
-        updateNotificationBadge();
-        loadNotifications();
-    }
-};
+if (document.getElementById("clearAll")) {
+    document.getElementById("clearAll").onclick = async () => {
+        if (!confirm("Clear all notifications?")) return;
+        const result = await sendToBackend('clearNotifications', { token: currentUser.token });
+        if (result && result.status === "Success") {
+            notifications = [];
+            updateNotificationBadge();
+            loadNotifications();
+        }
+    };
+}
 
 async function loadRecentActivity() {
     const activityList = document.querySelector(".activity-list");
-    if (!activityList) return;
 
-    const result = await sendToBackend('getUserDonations', { userId: currentUser.userId, token: currentUser.token });
+    const result = await sendToBackend('getUserDonations', {
+        userId: currentUser.userId || currentUser.id,
+        token: currentUser.token
+    });
     if (!result || result.status !== "Success") return;
 
-    const recent = result.data.slice(0, 5);
+    // Sync live donations from backend so Pending Payments, Payment History & Messages work across all devices
+    donations = Array.isArray(result.data) ? result.data : [];
+    localStorage.setItem("donations", JSON.stringify(donations));
+    loadPendingPayments();
+    loadPaymentHistory();
+    loadMessages();
+
+    if (!activityList) return;
+    const recent = donations.slice(0, 5);
 
     if (recent.length === 0) {
         activityList.innerHTML = `<div class="activity-item">No activity yet — share your campaign to get your first donation! ❤️</div>`;
@@ -1843,22 +1498,29 @@ async function loadRecentActivity() {
 }
 
 
-
+/*=====================================
+      COPY USER ID
+=====================================*/
 const copyBtn = document.getElementById("copyUserId");
 
-copyBtn.addEventListener("click", () => {
-    navigator.clipboard.writeText(
-        document.getElementById("userId").value
-    );
+if (copyBtn) {
+    copyBtn.addEventListener("click", () => {
+        navigator.clipboard.writeText(
+            document.getElementById("userId").value
+        );
 
-    copyBtn.innerHTML = "✅";
+        copyBtn.innerHTML = "✅";
 
-    setTimeout(() => {
-        copyBtn.innerHTML = "📋";
-    }, 1500);
-});
+        setTimeout(() => {
+            copyBtn.innerHTML = "📋";
+        }, 1500);
+    });
+}
 
 
+/*=====================================
+      PAYMENT HISTORY
+=====================================*/
 const paymentHistoryTable =
 document.getElementById("paymentHistoryTable");
 
@@ -1868,8 +1530,7 @@ if(!paymentHistoryTable) return;
 
 paymentHistoryTable.innerHTML="";
 
-const currentUser =
-JSON.parse(localStorage.getItem("currentUser"));
+const activeUserId = currentUser.userId || currentUser.id;
 
 const history = donations.filter(d=>{
 
@@ -1879,8 +1540,7 @@ const campaign = campaigns.find(c=>
 
 );
 
-return campaign &&
-campaign.ownerId===currentUser.userId;
+return !campaign || campaign.ownerId===activeUserId;
 
 });
 
@@ -1945,6 +1605,7 @@ paymentHistoryTable.innerHTML+=`
 }
 
 loadPaymentHistory();
+if (document.getElementById("paymentHistorySearch")) {
 document.getElementById("paymentHistorySearch")
 .addEventListener("input",function(){
 
@@ -1964,7 +1625,9 @@ row.innerText.toLowerCase().includes(keyword)
 });
 
 });
+}
 
+if (document.getElementById("paymentHistoryFilter")) {
 document.getElementById("paymentHistoryFilter")
 .onchange=function(){
 
@@ -1981,7 +1644,7 @@ return;
 
 }
 
-const status=row.cells[5].innerText.toLowerCase();
+const status=row.cells[5]?.innerText.toLowerCase() || "";
 
 row.style.display=
 
@@ -1994,6 +1657,7 @@ status.includes(filter)
 });
 
 };
+}
 
 /*=====================================
         LOAD DONOR MESSAGES
@@ -2003,17 +1667,16 @@ function loadMessages() {
     if(!messagesList) return;
     messagesList.innerHTML = "";
 
-    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+    const activeUserId = currentUser.userId || currentUser.id;
     
     // Filter donations: Must belong to current user AND have a message
     const userMessages = donations.filter(d => {
         const campaign = campaigns.find(c => (c.campaignId || "") === (d.campaignId || d.campaign));
         
         // Check if user owns campaign AND if a message exists (and isn't just empty spaces)
-        return campaign && 
-               campaign.ownerId === currentUser.userId && 
+        return (!campaign || campaign.ownerId === activeUserId) && 
                d.message && 
-               d.message.trim() !== "";
+               String(d.message).trim() !== "";
     });
 
     if(userMessages.length === 0) {
@@ -2028,7 +1691,8 @@ function loadMessages() {
 
     // Render each message
     userMessages.forEach(msg => {
-        const campaignName = msg.campaignName || msg.campaignId || "Your Campaign"; 
+        const matchedCamp = campaigns.find(c => (c.campaignId || "") === (msg.campaignId || msg.campaign));
+        const campaignName = msg.campaignName || (matchedCamp && (matchedCamp.giftName || matchedCamp.gift)) || msg.campaignId || "Your Campaign"; 
         
         messagesList.innerHTML += `
             <div class="message-item">
@@ -2061,7 +1725,7 @@ function loadCampaignListForAnalytics(){
     }
     
     campaigns.forEach(c => {
-        campaignSelect.innerHTML += `<option value="${c.campaignId}">${c.gift} (For ${c.receiver})</option>`;
+        campaignSelect.innerHTML += `<option value="${c.campaignId}">${c.gift || c.giftName} (For ${c.receiver})</option>`;
     });
     
     loadAnalytics(campaigns[0].campaignId); // Load the first campaign's ID by default
@@ -2087,30 +1751,30 @@ function loadAnalytics(campaignId){
     const progress = target > 0 ? Math.round((raised / target) * 100) : 0;
 
     // Update Top Overview
-    document.getElementById("totalRaised").innerText = "₹" + raised;
-    document.getElementById("totalDonors").innerText = donors;
-    document.getElementById("totalViews").innerText = views;
-    document.getElementById("progressPercent").innerText = progress + "%";
+    if (document.getElementById("totalRaised")) document.getElementById("totalRaised").innerText = "₹" + raised;
+    if (document.getElementById("totalDonors")) document.getElementById("totalDonors").innerText = donors;
+    if (document.getElementById("totalViews")) document.getElementById("totalViews").innerText = views;
+    if (document.getElementById("progressPercent")) document.getElementById("progressPercent").innerText = progress + "%";
 
     // Update Progress Bar
-    document.getElementById("raisedText").innerText = "Raised ₹" + raised;
-    document.getElementById("targetText").innerText = "Target ₹" + target;
+    if (document.getElementById("raisedText")) document.getElementById("raisedText").innerText = "Raised ₹" + raised;
+    if (document.getElementById("targetText")) document.getElementById("targetText").innerText = "Target ₹" + target;
     const progressFill = document.getElementById("progressFill");
     if(progressFill) progressFill.style.width = progress + "%";
 
     // Update Summaries
-    document.getElementById("todayDonation").innerText = "₹" + (c.todayDonation || 0);
-    document.getElementById("weekDonation").innerText = "₹" + (c.weekDonation || 0);
-    document.getElementById("monthDonation").innerText = "₹" + (c.monthDonation || raised);
+    if (document.getElementById("todayDonation")) document.getElementById("todayDonation").innerText = "₹" + (c.todayDonation || 0);
+    if (document.getElementById("weekDonation")) document.getElementById("weekDonation").innerText = "₹" + (c.weekDonation || 0);
+    if (document.getElementById("monthDonation")) document.getElementById("monthDonation").innerText = "₹" + (c.monthDonation || raised);
 
     // Update Insights
-    document.getElementById("viewCount").innerText = views;
-    document.getElementById("shareCount").innerText = shares;
-    document.getElementById("likeCount").innerText = likes;
+    if (document.getElementById("viewCount")) document.getElementById("viewCount").innerText = views;
+    if (document.getElementById("shareCount")) document.getElementById("shareCount").innerText = shares;
+    if (document.getElementById("likeCount")) document.getElementById("likeCount").innerText = likes;
 
     let conversion = views > 0 ? ((donors / views) * 100).toFixed(1) : 0;
-    document.getElementById("conversionRate").innerText = conversion + "%";
-    document.getElementById("campaignStatus").innerText = c.status || "Active";
+    if (document.getElementById("conversionRate")) document.getElementById("conversionRate").innerText = conversion + "%";
+    if (document.getElementById("campaignStatus")) document.getElementById("campaignStatus").innerText = c.status || "Active";
 
     // Render Top Donors
     const donorBox = document.getElementById("topDonors");
@@ -2125,12 +1789,17 @@ function loadAnalytics(campaignId){
         }
     }
 
-    // Render Expenses (Handles both old and new data structures)
+    // Render Expenses (Safely handles JSON strings and arrays)
     const expenseBox = document.getElementById("expenseList");
     if(expenseBox){
         expenseBox.innerHTML = "";
-        if(c.expenses && c.expenses.length){
-            c.expenses.forEach(e => {
+        let parsedExpenses = c.expenses;
+        if (typeof parsedExpenses === "string" && parsedExpenses.trim() !== "") {
+            try { parsedExpenses = JSON.parse(parsedExpenses); }
+            catch (e) { parsedExpenses = []; }
+        }
+        if(Array.isArray(parsedExpenses) && parsedExpenses.length){
+            parsedExpenses.forEach(e => {
                 expenseBox.innerHTML += `<div><span>${e.title || e.item}</span><strong>₹${e.amount || e.cost}</strong></div>`;
             });
         } else {
@@ -2201,23 +1870,607 @@ document.getElementById('hideCampaignsBtn')?.addEventListener('click', function(
 
 // --- Danger Zone (Destructive Actions) ---
 
-document.getElementById('deleteAllCampaignsBtn')?.addEventListener('click', function() {
-    const userInput = prompt("WARNING: This will permanently delete ALL your campaigns. Type 'DELETE' to confirm:");
+document.getElementById('deleteAllCampaignsBtn')?.addEventListener('click', async function() {
+    const userInput = prompt("WARNING: This will permanently delete ALL your campaigns, their Drive images, expenses, and donation records. Type 'DELETE' to confirm:");
     if (userInput === "DELETE") {
-        // Add your backend logic here
-        alert("All campaigns have been permanently deleted.");
+        const result = await sendToBackend('deleteAllUserCampaigns', {
+            userId: currentUser.userId || currentUser.id,
+            token: currentUser.token
+        });
+        if (result && result.status === "Success") {
+            localStorage.removeItem("newCampaign");
+            localStorage.removeItem("editingId");
+            localStorage.removeItem("draftData_" + (currentUser.userId || currentUser.id));
+            localStorage.removeItem("draftTime_" + (currentUser.userId || currentUser.id));
+            alert("✅ " + (result.message || "All campaigns and related records have been permanently deleted."));
+            refreshDashboard();
+        } else {
+            alert("❌ Failed to delete campaigns: " + (result?.message || "Server error"));
+        }
     } else if (userInput !== null) {
         alert("Action cancelled. You didn't type 'DELETE'.");
     }
 });
 
-document.getElementById('deleteAccountBtn')?.addEventListener('click', function() {
-    const userInput = prompt("WARNING: This will permanently delete your account and wipe all data. Type 'DELETE' to confirm:");
+document.getElementById('deleteAccountBtn')?.addEventListener('click', async function() {
+    const userInput = prompt("WARNING: This will permanently delete your account, campaigns, Drive images, expenses, donations, and messages. Type 'DELETE' to confirm:");
     if (userInput === "DELETE") {
-        // Add your backend logic here
-        alert("Account deleted. Redirecting to homepage...");
-        window.location.href = "index.html"; // Or wherever your login page is
+        const result = await sendToBackend('deleteUser', {
+            userId: currentUser.userId || currentUser.id,
+            token: currentUser.token
+        });
+        if (result && result.status === "Success") {
+            localStorage.clear();
+            sessionStorage.clear();
+            alert("✅ Your account and all associated data have been permanently deleted.");
+            window.location.href = "index.html";
+        } else {
+            alert("❌ Failed to delete account: " + (result?.message || "Server error"));
+        }
     } else if (userInput !== null) {
         alert("Action cancelled. Your account is safe.");
     }
 });
+
+
+/*=====================================================================
+  PROFILE SECURITY, EMAIL VERIFICATION PILL & CHANGE PASSWORD MODAL
+=====================================================================*/
+(function () {
+  "use strict";
+
+  const $ = function (id) { return document.getElementById(id); };
+
+  const FIELDS = { fullName: "name", email: "email", mobile: "mobile", dob: "dob", gender: "gender", bio: "bio" };
+  const IDS = Object.keys(FIELDS).filter(function (id) { return $(id); });
+
+  const editToggleBtn = $("editProfileToggleBtn");
+  const saveBtn = $("saveProfile");
+  const lockTag = $("userIdLockTag");
+  const verifyEmailBadge = $("verifyEmailBadge");
+  const actionsWrap = $("profileEditActions");
+
+  if (!saveBtn || !editToggleBtn || !$("fullName")) return;
+
+  /* ---------- helpers ---------- */
+  function norm(key, v) {
+    v = String(v == null ? "" : v);
+    if (key === "mobile") return v.replace(/[\s\-()]/g, "");
+    if (key === "email") return v.trim().toLowerCase();
+    if (key === "name") return v.replace(/\s+/g, " ").trim();
+    return v.trim();
+  }
+
+  function persistCurrentUser() {
+    if (localStorage.getItem("currentUser")) {
+      localStorage.setItem("currentUser", JSON.stringify(currentUser));
+    }
+    if (sessionStorage.getItem("currentUser")) {
+      sessionStorage.setItem("currentUser", JSON.stringify(currentUser));
+    }
+  }
+
+  // Because signup.js verifies email via OTP at account creation and profile edits verify via OTP,
+  // an account with a valid email is verified unless explicitly marked emailVerified === false.
+  function isUserEmailVerified() {
+    if (!currentUser || !currentUser.email) return false;
+    if (currentUser.emailVerified === false || String(currentUser.emailVerified).toUpperCase() === "FALSE") {
+      return false;
+    }
+    return true;
+  }
+
+  /* ---------- state ---------- */
+  const original = {};
+  let isEditing = false;
+  let pending = null; // { mode: 'profile'|'verify-email', changes, hasEmail, stage, sentTo }
+  let busy = false;
+  let cooldown = null;
+  let toastTimer = null;
+
+  /* ---------- Hint under buttons ---------- */
+  const hint = document.createElement("p");
+  hint.className = "profile-hint";
+  hint.textContent = "🔒 Click Edit Profile to unlock fields. Every change is confirmed with an email code.";
+  actionsWrap.insertAdjacentElement("afterend", hint);
+
+  /* ---------- Toast ---------- */
+  const toastEl = document.createElement("div");
+  toastEl.className = "pf-toast";
+  toastEl.setAttribute("role", "status");
+  document.body.appendChild(toastEl);
+
+  function toast(msg, type) {
+    toastEl.textContent = msg;
+    toastEl.className = "pf-toast show" + (type ? " " + type : "");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 4000);
+  }
+
+  /* ---------- OTP Modal (for Profile Save & Verify Email) ---------- */
+  const overlay = document.createElement("div");
+  overlay.className = "otp-overlay";
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("aria-labelledby", "otpTitle");
+  overlay.innerHTML = `
+    <div class="otp-card">
+      <ul class="otp-steps" id="otpSteps" hidden>
+        <li id="otpStep1" class="active"><span class="dot">1</span>Current email</li>
+        <li class="bar" aria-hidden="true"></li>
+        <li id="otpStep2"><span class="dot">2</span>New email</li>
+      </ul>
+      <h2 id="otpTitle"></h2>
+      <p class="otp-sub" id="otpSub"></p>
+      <input class="otp-input" id="otpInput" type="text" inputmode="numeric" pattern="[0-9]*"
+             autocomplete="one-time-code" placeholder="······" aria-label="6-digit code">
+      <div class="otp-msg" id="otpMsg" role="alert"></div>
+      <button type="button" class="primary" id="otpVerify"></button>
+      <div class="otp-links">
+        <button type="button" class="link-btn" id="otpResend">Resend code</button>
+        <button type="button" class="link-btn" id="otpCancel">Cancel</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const otpSteps = $("otpSteps"), otpTitle = $("otpTitle"), otpSub = $("otpSub"), otpInput = $("otpInput"),
+        otpMsg = $("otpMsg"), verifyBtn = $("otpVerify"), resendBtn = $("otpResend"), cancelBtn = $("otpCancel");
+
+  function setMsg(text, kind) {
+    otpMsg.textContent = text || "";
+    otpMsg.className = "otp-msg" + (kind ? " " + kind : "");
+  }
+
+  function startCooldown(sec) {
+    clearInterval(cooldown);
+    let left = Number(sec) || 60;
+    function tick() {
+      resendBtn.disabled = left > 0;
+      resendBtn.textContent = left > 0 ? "Resend in " + left + "s" : "Resend code";
+      if (left-- <= 0) clearInterval(cooldown);
+    }
+    tick();
+    cooldown = setInterval(tick, 1000);
+  }
+
+  function openModal() {
+    overlay.classList.add("show");
+    document.body.style.overflow = "hidden";
+    setTimeout(function () { otpInput.focus(); }, 60);
+  }
+
+  function closeModal() {
+    overlay.classList.remove("show");
+    document.body.style.overflow = "";
+    clearInterval(cooldown);
+  }
+
+  function renderStage() {
+    const p = pending;
+    let before, after = ".";
+
+    otpSteps.hidden = !(p.mode === "profile" && p.hasEmail);
+    $("otpStep1").className = p.stage === 1 ? "active" : "done";
+    $("otpStep1").querySelector(".dot").textContent = p.stage === 1 ? "1" : "✓";
+    $("otpStep2").className = p.stage === 2 ? "active" : "";
+
+    if (p.mode === "verify-email") {
+      otpTitle.textContent = "Verify your email";
+      before = "Enter the 6-digit code we sent to ";
+      after = " to mark your email as verified.";
+      verifyBtn.textContent = "Verify Email";
+    } else if (!p.hasEmail) {
+      otpTitle.textContent = "Confirm your changes";
+      before = "Enter the 6-digit code we sent to ";
+      after = " to confirm your changes.";
+      verifyBtn.textContent = "Confirm and save";
+    } else if (p.stage === 1) {
+      otpTitle.textContent = "Confirm it's you";
+      before = "Step 1 of 2. Enter the code we sent to your current email, ";
+      verifyBtn.textContent = "Continue";
+    } else {
+      otpTitle.textContent = "Verify your new email";
+      before = "Step 2 of 2. Enter the code we sent to ";
+      verifyBtn.textContent = "Verify and save";
+    }
+
+    const b = document.createElement("b");
+    b.textContent = p.sentTo;
+    otpSub.textContent = before;
+    otpSub.append(b, after);
+    otpInput.value = "";
+    setMsg("");
+  }
+
+  /* ---------- Email Verified Pill Visibility ---------- */
+  function syncVerifyEmailBadge() {
+    if (!verifyEmailBadge) return;
+    verifyEmailBadge.hidden = isUserEmailVerified();
+  }
+
+  /* ---------- Single Edit Profile & Dynamic Save Button Logic ---------- */
+  function snapshot() {
+    IDS.forEach(function (id) { original[id] = $(id).value; });
+  }
+
+  function collectChanges() {
+    const out = {};
+    if (!isEditing) return out;
+    IDS.forEach(function (id) {
+      const key = FIELDS[id];
+      const now = norm(key, $(id).value);
+      if (now !== norm(key, original[id])) out[key] = now;
+    });
+    return out;
+  }
+
+  function refreshSaveVisibility() {
+    if (!isEditing) {
+      saveBtn.hidden = true;
+      return;
+    }
+    const hasChanges = Object.keys(collectChanges()).length > 0;
+    // Save button ONLY appears beside Edit button when at least 1 character has changed
+    saveBtn.hidden = !hasChanges;
+  }
+
+  function setEditMode(on) {
+    isEditing = on;
+
+    // Show/hide "🔒 Can't be changed" on User ID ONLY when edit mode is unlocked
+    if (lockTag) lockTag.hidden = !on;
+
+    IDS.forEach(function (id) {
+      const el = $(id);
+      if (!on) el.value = original[id]; // revert unsaved edits when cancelling
+      el.disabled = !on;
+      el.classList.toggle("field-unlocked", on);
+    });
+
+    editToggleBtn.classList.toggle("editing-active", on);
+    editToggleBtn.innerHTML = on ? "✖ Cancel Edit" : "✏️ Edit Profile";
+
+    if (on) {
+      $("fullName").focus();
+    }
+    refreshSaveVisibility();
+  }
+
+  editToggleBtn.addEventListener("click", function () {
+    setEditMode(!isEditing);
+  });
+
+  IDS.forEach(function (id) {
+    const el = $(id);
+    el.addEventListener("input", refreshSaveVisibility);
+    el.addEventListener("change", refreshSaveVisibility);
+  });
+
+  /* ---------- Profile Save Flow ---------- */
+  async function onSave() {
+    if (busy || !isEditing) return;
+    const changes = collectChanges();
+    if (Object.keys(changes).length === 0) return;
+    if (!currentUser.token) { toast("Your session has expired. Log in again.", "error"); return; }
+
+    busy = true;
+    const res = await sendToBackend("requestProfileChange", { token: currentUser.token, changes: changes });
+    busy = false;
+    if (!res) return;
+    if (res.status !== "Success") { toast(res.message || "We couldn't send the code. Try again.", "error"); return; }
+
+    const d = res.data || {};
+    pending = { mode: "profile", changes: changes, hasEmail: !!changes.email, stage: 1, sentTo: d.sentTo || "your email" };
+    renderStage();
+    openModal();
+    startCooldown(d.resendInSec);
+  }
+
+  /* ---------- Verify Unverified Email Flow ---------- */
+  async function onVerifyEmailClick() {
+    if (busy) return;
+    if (!currentUser.token) { toast("Your session has expired. Log in again.", "error"); return; }
+
+    busy = true;
+    const res = await sendToBackend("requestEmailVerification", { token: currentUser.token });
+    busy = false;
+    if (!res) return;
+    if (res.status !== "Success") {
+      if (res.data && res.data.alreadyVerified) {
+        currentUser.emailVerified = true;
+        persistCurrentUser();
+        syncVerifyEmailBadge();
+        toast("Your email is already verified! ✅", "ok");
+        return;
+      }
+      toast(res.message || "Could not send verification email.", "error");
+      return;
+    }
+
+    const d = res.data || {};
+    pending = { mode: "verify-email", changes: {}, hasEmail: false, stage: 1, sentTo: d.sentTo || currentUser.email || "your email" };
+    renderStage();
+    openModal();
+    startCooldown(d.resendInSec || 60);
+  }
+
+  if (verifyEmailBadge) {
+    verifyEmailBadge.addEventListener("click", onVerifyEmailClick);
+  }
+
+  /* ---------- OTP Verify / Resend / Cancel ---------- */
+  async function onVerify() {
+    if (!pending || busy) return;
+    if (otpInput.value.length !== 6) { setMsg("Enter the 6-digit code.", "error"); return; }
+
+    busy = true;
+    verifyBtn.disabled = true;
+    const actionName = pending.mode === "verify-email" ? "verifyEmailOtp" : "verifyProfileChange";
+    const res = await sendToBackend(actionName, { token: currentUser.token, otp: otpInput.value });
+    busy = false;
+    verifyBtn.disabled = false;
+    if (!res || !pending) return;
+
+    const d = res.data || {};
+    if (res.status === "Success") {
+      if (pending.mode === "verify-email") {
+        currentUser.emailVerified = true;
+        persistCurrentUser();
+        syncVerifyEmailBadge();
+        pending = null;
+        closeModal();
+        toast(res.message || "Email verified successfully! ✅", "ok");
+        if (typeof loadNotificationsFromServer === "function") loadNotificationsFromServer();
+      } else if (d.done === false) {
+        pending.stage = 2;
+        pending.sentTo = d.sentTo || "your new email";
+        renderStage();
+        startCooldown(d.resendInSec);
+        otpInput.focus();
+      } else {
+        finishProfileSave(d, res.message);
+      }
+    } else if (d.restart) {
+      dropPending(res.message);
+    } else {
+      setMsg(res.message || "That code didn't work.", "error");
+      otpInput.select();
+    }
+  }
+
+  function finishProfileSave(d, message) {
+    const saved = d.profile || {};
+    IDS.forEach(function (id) {
+      const key = FIELDS[id];
+      if (pending.changes[key] === undefined) return;
+      currentUser[key] = saved[key] !== undefined ? saved[key] : pending.changes[key];
+      $(id).value = currentUser[key];
+    });
+    if (pending.changes.email) {
+      currentUser.emailVerified = true;
+      syncVerifyEmailBadge();
+    }
+    persistCurrentUser();
+
+    if ($("dashboardUsername")) $("dashboardUsername").innerText = currentUser.name;
+    if ($("profileUserName")) $("profileUserName").innerText = currentUser.name;
+    if ($("userEmail")) $("userEmail").innerText = currentUser.email || "";
+
+    pending = null;
+    closeModal();
+    snapshot();
+    setEditMode(false);
+    toast(message || "Changes saved.", "ok");
+    if (typeof loadNotificationsFromServer === "function") loadNotificationsFromServer();
+  }
+
+  function dropPending(message) {
+    pending = null;
+    closeModal();
+    toast(message || "That request expired. Try again.", "error");
+  }
+
+  async function onResend() {
+    if (!pending || busy || resendBtn.disabled) return;
+
+    busy = true;
+    const actionName = pending.mode === "verify-email" ? "requestEmailVerification" : "resendProfileChangeOtp";
+    const res = await sendToBackend(actionName, { token: currentUser.token });
+    busy = false;
+    if (!res || !pending) return;
+
+    const d = res.data || {};
+    if (res.status === "Success") {
+      otpInput.value = "";
+      setMsg("New code sent.", "ok");
+      startCooldown(d.resendInSec || 60);
+      otpInput.focus();
+    } else if (d.restart) {
+      dropPending(res.message);
+    } else {
+      const wait = /Wait (\d+) seconds/.exec(res.message || "");
+      if (wait) startCooldown(Number(wait[1]));
+      setMsg(res.message || "We couldn't send a new code. Try again in a moment.", "error");
+    }
+  }
+
+  function onCancel() {
+    if (busy || !pending) return;
+    const mode = pending.mode;
+    pending = null;
+    closeModal();
+    if (mode === "profile") {
+      fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "cancelProfileChange", data: { token: currentUser.token } })
+      }).catch(function () {});
+    }
+    toast("Cancelled.");
+  }
+
+  saveBtn.addEventListener("click", onSave);
+  verifyBtn.addEventListener("click", onVerify);
+  resendBtn.addEventListener("click", onResend);
+  cancelBtn.addEventListener("click", onCancel);
+
+  otpInput.addEventListener("input", function () {
+    otpInput.value = otpInput.value.replace(/\D/g, "").slice(0, 6);
+    setMsg("");
+  });
+  otpInput.addEventListener("keydown", function (e) { if (e.key === "Enter") onVerify(); });
+
+  /* ---------- Change Password Modal (Profile & Settings) ---------- */
+  const pwdOverlay = document.createElement("div");
+  pwdOverlay.className = "otp-overlay";
+  pwdOverlay.setAttribute("role", "dialog");
+  pwdOverlay.setAttribute("aria-modal", "true");
+  pwdOverlay.innerHTML = `
+    <div class="otp-card">
+      <h2>🔑 Change Password</h2>
+      <p class="otp-sub">Enter your current password and choose a new password.</p>
+      <div class="pwd-field-group">
+        <label for="curPwdInput">Current Password</label>
+        <input type="password" id="curPwdInput" placeholder="Enter current password">
+      </div>
+      <div class="pwd-field-group">
+        <label for="newPwdInput">New Password</label>
+        <input type="password" id="newPwdInput" placeholder="At least 6 characters">
+      </div>
+      <div class="pwd-field-group">
+        <label for="confirmPwdInput">Confirm New Password</label>
+        <input type="password" id="confirmPwdInput" placeholder="Re-enter new password">
+      </div>
+      <div class="otp-msg" id="pwdMsg" role="alert"></div>
+      <button type="button" class="primary" id="submitPwdChange">Update Password</button>
+      <div class="otp-links">
+        <button type="button" class="link-btn" id="forgotPwdResetBtn">Forgot password? Email reset link</button>
+        <button type="button" class="link-btn" id="closePwdModalBtn">Cancel</button>
+      </div>
+    </div>`;
+  document.body.appendChild(pwdOverlay);
+
+  const curPwdInput = $("curPwdInput"), newPwdInput = $("newPwdInput"), confirmPwdInput = $("confirmPwdInput"),
+        pwdMsg = $("pwdMsg"), submitPwdBtn = $("submitPwdChange"), forgotPwdBtn = $("forgotPwdResetBtn"),
+        closePwdBtn = $("closePwdModalBtn");
+
+  function setPwdMsg(text, kind) {
+    pwdMsg.textContent = text || "";
+    pwdMsg.className = "otp-msg" + (kind ? " " + kind : "");
+  }
+
+  function openPasswordModal() {
+    curPwdInput.value = "";
+    newPwdInput.value = "";
+    confirmPwdInput.value = "";
+    setPwdMsg("");
+    pwdOverlay.classList.add("show");
+    document.body.style.overflow = "hidden";
+    setTimeout(function () { curPwdInput.focus(); }, 60);
+  }
+
+  function closePasswordModal() {
+    pwdOverlay.classList.remove("show");
+    document.body.style.overflow = "";
+  }
+
+  async function onSubmitPasswordChange() {
+    if (busy) return;
+    const curPwd = curPwdInput.value;
+    const newPwd = newPwdInput.value;
+    const confPwd = confirmPwdInput.value;
+
+    if (!curPwd || !newPwd || !confPwd) {
+      setPwdMsg("Please fill in all password fields.", "error");
+      return;
+    }
+    if (newPwd.length < 6) {
+      setPwdMsg("New password must be at least 6 characters.", "error");
+      return;
+    }
+    if (newPwd !== confPwd) {
+      setPwdMsg("New passwords do not match.", "error");
+      return;
+    }
+    if (curPwd === newPwd) {
+      setPwdMsg("New password must be different from your current password.", "error");
+      return;
+    }
+
+    busy = true;
+    submitPwdBtn.disabled = true;
+    const res = await sendToBackend("changeUserPassword", {
+      token: currentUser.token,
+      currentPassword: curPwd,
+      newPassword: newPwd
+    });
+    busy = false;
+    submitPwdBtn.disabled = false;
+
+    if (!res) return;
+    if (res.status === "Success") {
+      closePasswordModal();
+      toast(res.message || "Password updated successfully! 🔐", "ok");
+      if (typeof loadNotificationsFromServer === "function") loadNotificationsFromServer();
+    } else {
+      setPwdMsg(res.message || "Failed to update password.", "error");
+    }
+  }
+
+  async function onForgotPasswordLink() {
+    if (busy) return;
+    if (!currentUser || !currentUser.email) {
+      setPwdMsg("No email found on your account.", "error");
+      return;
+    }
+    busy = true;
+    forgotPwdBtn.disabled = true;
+    const res = await sendToBackend("resetPassword", { email: currentUser.email });
+    busy = false;
+    forgotPwdBtn.disabled = false;
+
+    if (!res) return;
+    if (res.status === "Success") {
+      closePasswordModal();
+      toast("Reset link sent to " + currentUser.email + " 📧", "ok");
+    } else {
+      setPwdMsg(res.message || "Could not send reset link.", "error");
+    }
+  }
+
+  submitPwdBtn.addEventListener("click", onSubmitPasswordChange);
+  forgotPwdBtn.addEventListener("click", onForgotPasswordLink);
+  closePwdBtn.addEventListener("click", closePasswordModal);
+
+  if ($("profileChangePassword")) $("profileChangePassword").onclick = openPasswordModal;
+  if ($("settingsChangePassword")) $("settingsChangePassword").onclick = openPasswordModal;
+
+  // Connect Settings -> Change Email / Change Mobile shortcuts to Profile Edit mode
+  if ($("changeEmail")) {
+    $("changeEmail").onclick = function () {
+      openPage("profile");
+      setEditMode(true);
+      setTimeout(function () { $("email").focus(); }, 100);
+    };
+  }
+  if ($("changeMobile")) {
+    $("changeMobile").onclick = function () {
+      openPage("profile");
+      setEditMode(true);
+      setTimeout(function () { $("mobile").focus(); }, 100);
+    };
+  }
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      if (overlay.classList.contains("show")) onCancel();
+      if (pwdOverlay.classList.contains("show")) closePasswordModal();
+    }
+  });
+
+  /* ---------- Initialize ---------- */
+  snapshot();
+  setEditMode(false);
+  syncVerifyEmailBadge();
+})();
+/*===================== END PROFILE SECURITY =====================*/

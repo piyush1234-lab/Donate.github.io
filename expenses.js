@@ -1,10 +1,13 @@
 /*=====================================
         STRICT LOGIN CHECK 
 =====================================*/
-const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+// Check both localStorage (Remember Me) and sessionStorage (standard login)
+const isPersistentLogin = localStorage.getItem("isLoggedIn") === "true";
+const isSessionLogin = sessionStorage.getItem("isLoggedIn") === "true";
+const currentUserStr = localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser");
+const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
 
-// Put this on protected pages
-if (!currentUser || (!currentUser.userId && !currentUser.id)) {
+if ((!isPersistentLogin && !isSessionLogin) || !currentUser || (!currentUser.userId && !currentUser.id)) {
     alert("You must be logged in to view this page.");
     window.location.href = "login.html";
 }
@@ -12,9 +15,10 @@ if (!currentUser || (!currentUser.userId && !currentUser.id)) {
 /*=====================================
         SECURE DRAFT KEYS
 =====================================*/
-const DRAFT_KEY = "draftData_" + currentUser.userId;
-const EXPENSES_KEY = "campaignExpenses_" + currentUser.userId;
-const EXPENSE_TIME_KEY = "expenseTime_" + currentUser.userId;
+const activeUserId = (currentUser && (currentUser.userId || currentUser.id)) || "";
+const DRAFT_KEY = "draftData_" + activeUserId;
+const EXPENSES_KEY = "campaignExpenses_" + activeUserId;
+const EXPENSE_TIME_KEY = "expenseTime_" + activeUserId;
 
 /*=====================================
       CHAIN VERIFICATION & LOAD DRAFT
@@ -22,32 +26,29 @@ const EXPENSE_TIME_KEY = "expenseTime_" + currentUser.userId;
 const campaign = JSON.parse(localStorage.getItem(DRAFT_KEY));
 
 // 🔥 FIX: Enforce the strict chain. If they didn't come from create.html, kick them back.
-if(!campaign){
+if (!campaign) {
     alert("Security Check: No active campaign draft found. Please start from step 1.");
     window.location.href = "create.html?new=true";
 } else {
     // Load the summary data visually
-    const targetAmount = Number(campaign.target) || 0;
-    document.getElementById("giftName").innerText = campaign.gift || "Unknown Gift";
-    document.getElementById("receiver").innerText = campaign.receiver || "Unknown";
-    document.getElementById("targetAmount").innerText = targetAmount;
-    document.getElementById("target").innerText = targetAmount;
+    const initialTarget = Number(campaign.target || campaign.targetAmount) || 0;
+    if (document.getElementById("giftName")) document.getElementById("giftName").innerText = campaign.gift || campaign.giftName || "Unknown Gift";
+    if (document.getElementById("receiver")) document.getElementById("receiver").innerText = campaign.receiver || "Unknown";
+    if (document.getElementById("targetAmount")) document.getElementById("targetAmount").innerText = initialTarget;
+    if (document.getElementById("target")) document.getElementById("target").innerText = initialTarget;
 }
 
 /*=====================================
-      INITIALIZATION & EXPIRATION CHECK
+      EXPIRATION CHECK (6 HOURS)
 =====================================*/
-document.addEventListener("DOMContentLoaded", () => {
-    // Check for expiration (6 Hours)
-    let savedTime = localStorage.getItem(EXPENSE_TIME_KEY);
-    if (savedTime) {
-        let hoursPassed = (Date.now() - parseInt(savedTime)) / (1000 * 60 * 60);
-        if (hoursPassed > 6) {
-            localStorage.removeItem(EXPENSES_KEY);
-            localStorage.removeItem(EXPENSE_TIME_KEY);
-        }
+let savedTime = localStorage.getItem(EXPENSE_TIME_KEY);
+if (savedTime) {
+    let hoursPassed = (Date.now() - parseInt(savedTime)) / (1000 * 60 * 60);
+    if (hoursPassed > 6) {
+        localStorage.removeItem(EXPENSES_KEY);
+        localStorage.removeItem(EXPENSE_TIME_KEY);
     }
-});
+}
 
 /*=====================================
         MOBILE MENU
@@ -55,34 +56,36 @@ document.addEventListener("DOMContentLoaded", () => {
 const menuBtn = document.getElementById("menuBtn");
 const menu = document.getElementById("menu");
 
-menuBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    menu.classList.toggle("show");
-});
+if (menuBtn && menu) {
+    menuBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        menu.classList.toggle("show");
+    });
 
-document.querySelectorAll("#menu a").forEach(link => {
-    link.addEventListener("click", () => menu.classList.remove("show"));
-});
+    document.querySelectorAll("#menu a").forEach(link => {
+        link.addEventListener("click", () => menu.classList.remove("show"));
+    });
 
-document.addEventListener("click", (e) => {
-    if (!menu.contains(e.target) && !menuBtn.contains(e.target)) {
-        menu.classList.remove("show");
-    }
-});
+    document.addEventListener("click", (e) => {
+        if (!menu.contains(e.target) && !menuBtn.contains(e.target)) {
+            menu.classList.remove("show");
+        }
+    });
+}
 
 /*=====================================
       FLOATING HEARTS
 =====================================*/
 const hearts = document.querySelector(".hearts");
-for(let i=0;i<18;i++){
+for (let i = 0; i < 18; i++) {
     let heart = document.createElement("div");
     heart.className = "heart";
     heart.innerHTML = "❤";
-    heart.style.left = Math.random()*100+"vw";
-    heart.style.fontSize = 12+Math.random()*18+"px";
-    heart.style.animationDuration = 8+Math.random()*8+"s";
-    heart.style.animationDelay = Math.random()*5+"s";
-    if(hearts) hearts.appendChild(heart);
+    heart.style.left = Math.random() * 100 + "vw";
+    heart.style.fontSize = 12 + Math.random() * 18 + "px";
+    heart.style.animationDuration = 8 + Math.random() * 8 + "s";
+    heart.style.animationDelay = Math.random() * 5 + "s";
+    if (hearts) hearts.appendChild(heart);
 }
 
 /*=====================================
@@ -94,7 +97,7 @@ const remaining = document.getElementById("remaining");
 const progressFill = document.getElementById("progressFill");
 const warning = document.getElementById("warning");
 const continueBtn = document.getElementById("continueBtn");
-const targetAmount = Number(campaign.target) || 0;
+const targetAmount = campaign ? (Number(campaign.target || campaign.targetAmount) || 0) : 0;
 
 const multiRadios = document.getElementsByName("multiExpense");
 const expenseCountContainer = document.getElementById("expenseCountContainer");
@@ -103,30 +106,33 @@ const expenseCountSelect = document.getElementById("expenseCount");
 /*=====================================
       CALCULATE & STRICT VALIDATION
 =====================================*/
-function calculate(){
+function calculate() {
     let total = 0;
     let allFilled = true;
     const inputs = document.querySelectorAll(".price");
     
     inputs.forEach(input => {
-        if(input.value.trim() === "") allFilled = false;
+        if (input.value.trim() === "") allFilled = false;
         total += Number(input.value) || 0;
     });
 
-    totalExpense.innerText = total;
+    if (totalExpense) totalExpense.innerText = total;
     
     const remainingVal = targetAmount - total;
-    remaining.innerText = remainingVal > 0 ? remainingVal : 0;
+    if (remaining) remaining.innerText = remainingVal > 0 ? remainingVal : 0;
 
     let percent = targetAmount > 0 ? (total / targetAmount) * 100 : 0;
-    progressFill.style.width = Math.min(percent, 100) + "%";
+    if (progressFill) progressFill.style.width = Math.min(percent, 100) + "%";
 
-    const isMulti = document.querySelector('input[name="multiExpense"]:checked').value === 'yes';
+    const checkedRadio = document.querySelector('input[name="multiExpense"]:checked');
+    const isMulti = checkedRadio ? checkedRadio.value === 'yes' : false;
 
     if (total < targetAmount) {
-        warning.innerText = "Expense amount can't be lower than the targeted amount.";
-        warning.style.color = "#ff4d4d";
-        continueBtn.disabled = true;
+        if (warning) {
+            warning.innerText = "Expense amount can't be lower than the targeted amount.";
+            warning.style.color = "#ff4d4d";
+        }
+        if (continueBtn) continueBtn.disabled = true;
 
         if (isMulti && allFilled && inputs.length > 0) {
             const lastInput = inputs[inputs.length - 1];
@@ -136,12 +142,14 @@ function calculate(){
             }
         }
     } else {
-        continueBtn.disabled = false;
+        if (continueBtn) continueBtn.disabled = false;
         if (total > targetAmount) {
-            warning.innerText = "⚠ Expenses exceed campaign target.";
-            warning.style.color = "#ffb300";
+            if (warning) {
+                warning.innerText = "⚠ Expenses exceed campaign target.";
+                warning.style.color = "#ffb300";
+            }
         } else {
-            warning.innerText = "";
+            if (warning) warning.innerText = "";
         }
     }
 }
@@ -149,7 +157,7 @@ function calculate(){
 /*=====================================
       DYNAMIC ROWS LOGIC
 =====================================*/
-function attachDelete(button){
+function attachDelete(button) {
     button.addEventListener("click", () => {
         const nameInput = button.parentElement.querySelector('.item');
         const priceInput = button.parentElement.querySelector('.price');
@@ -167,7 +175,8 @@ function attachDelete(button){
             return;
         }
         
-        const isMulti = document.querySelector('input[name="multiExpense"]:checked').value === 'yes';
+        const checkedRadio = document.querySelector('input[name="multiExpense"]:checked');
+        const isMulti = checkedRadio ? checkedRadio.value === 'yes' : false;
         const rowCount = document.querySelectorAll(".expense-row").length;
         
         if (isMulti && rowCount <= 2) { alert("You selected multiple expenses. Minimum 2 expenses required."); return; }
@@ -179,15 +188,18 @@ function attachDelete(button){
     });
 }
 
-function attachPrice(input){ input.addEventListener("input", calculate); }
+function attachPrice(input) {
+    input.addEventListener("input", calculate);
+}
 
 function addExpenseRow(itemName = "", itemAmount = "") {
+    if (!expenseContainer) return;
     const row = document.createElement("div");
     row.className = "expense-row";
     row.innerHTML = `
         <input type="text" class="item" placeholder="Expense Name" value="${itemName}">
         <input type="number" class="price" placeholder="Amount" value="${itemAmount}">
-        <button class="delete" tabindex="-1">🗑</button>
+        <button class="delete" type="button" tabindex="-1">🗑</button>
     `;
     expenseContainer.appendChild(row);
     attachDelete(row.querySelector(".delete"));
@@ -195,6 +207,7 @@ function addExpenseRow(itemName = "", itemAmount = "") {
 }
 
 function syncDropdown(count) {
+    if (!expenseCountSelect) return;
     let option = expenseCountSelect.querySelector(`option[value="${count}"]`);
     if (!option) {
         option = document.createElement('option');
@@ -222,7 +235,7 @@ multiRadios.forEach(radio => {
             expenseCountContainer.style.display = 'block';
             let targetCount = Math.max(2, data.length); 
             syncDropdown(targetCount);
-            for(let i=0; i < targetCount; i++) {
+            for (let i = 0; i < targetCount; i++) {
                 addExpenseRow(data[i]?.item || "", data[i]?.amount || "");
             }
         } else {
@@ -233,36 +246,50 @@ multiRadios.forEach(radio => {
     });
 });
 
-expenseCountSelect.addEventListener('change', (e) => {
-    const targetCount = parseInt(e.target.value);
-    const currentRows = Array.from(document.querySelectorAll('.expense-row'));
-    const currentCount = currentRows.length;
-    
-    if (targetCount > currentCount) {
-        for(let i = currentCount; i < targetCount; i++) addExpenseRow();
-    } else if (targetCount < currentCount) {
-        for(let i = currentCount - 1; i >= targetCount; i--) currentRows[i].remove();
-    }
-    calculate();
-});
+if (expenseCountSelect) {
+    expenseCountSelect.addEventListener('change', (e) => {
+        const targetCount = parseInt(e.target.value);
+        const currentRows = Array.from(document.querySelectorAll('.expense-row'));
+        const currentCount = currentRows.length;
+        
+        if (targetCount > currentCount) {
+            for (let i = currentCount; i < targetCount; i++) addExpenseRow();
+        } else if (targetCount < currentCount) {
+            for (let i = currentCount - 1; i >= targetCount; i--) currentRows[i].remove();
+        }
+        calculate();
+    });
+}
 
 /*=====================================
       INITIALIZE & LOAD DRAFT
 =====================================*/
-const savedExpenses = JSON.parse(localStorage.getItem(EXPENSES_KEY));
+let savedExpenses = JSON.parse(localStorage.getItem(EXPENSES_KEY));
+
+// Fallback: If editing an existing campaign, check if expenses are stored inside the draft object
+if ((!savedExpenses || savedExpenses.length === 0) && campaign && campaign.expenses) {
+    if (Array.isArray(campaign.expenses)) {
+        savedExpenses = campaign.expenses;
+    } else if (typeof campaign.expenses === "string" && campaign.expenses.trim() !== "") {
+        try { savedExpenses = JSON.parse(campaign.expenses); }
+        catch (e) { savedExpenses = null; }
+    }
+}
 
 if (savedExpenses && savedExpenses.length > 0) {
     if (savedExpenses.length > 1) {
-        document.querySelector('input[name="multiExpense"][value="yes"]').checked = true;
-        expenseCountContainer.style.display = 'block';
+        const yesRadio = document.querySelector('input[name="multiExpense"][value="yes"]');
+        if (yesRadio) yesRadio.checked = true;
+        if (expenseCountContainer) expenseCountContainer.style.display = 'block';
         syncDropdown(savedExpenses.length);
     } else {
-        document.querySelector('input[name="multiExpense"][value="no"]').checked = true;
+        const noRadio = document.querySelector('input[name="multiExpense"][value="no"]');
+        if (noRadio) noRadio.checked = true;
     }
     
-    expenseContainer.innerHTML = "";
+    if (expenseContainer) expenseContainer.innerHTML = "";
     savedExpenses.forEach(exp => {
-        addExpenseRow(exp.item, exp.amount);
+        addExpenseRow(exp.item || exp.title || "", exp.amount || exp.cost || "");
     });
 } else {
     addExpenseRow();
@@ -272,24 +299,38 @@ calculate();
 /*=====================================
       CONTINUE & BACK
 =====================================*/
-continueBtn.addEventListener("click", () => {
-    const expenses = [];
-    
-    document.querySelectorAll(".expense-row").forEach(row => {
-        const item = row.querySelector(".item").value.trim();
-        const amount = row.querySelector(".price").value;
+if (continueBtn) {
+    continueBtn.addEventListener("click", () => {
+        const expenses = [];
+        let missingItemName = false;
         
-        if(item !== "" && amount !== ""){
-            expenses.push({ item, amount: Number(amount) });
+        document.querySelectorAll(".expense-row").forEach(row => {
+            const item = row.querySelector(".item").value.trim();
+            const amount = row.querySelector(".price").value.trim();
+            
+            if (amount !== "" && Number(amount) > 0 && item === "") {
+                missingItemName = true;
+            }
+            if (item !== "" && amount !== "" && Number(amount) > 0) {
+                expenses.push({ item, amount: Number(amount) });
+            }
+        });
+
+        if (missingItemName || expenses.length === 0) {
+            alert("Please enter an Expense Name for each expense item before continuing.");
+            return;
         }
+
+        // Save to User-Specific Key with Timestamp
+        localStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses));
+        localStorage.setItem(EXPENSE_TIME_KEY, Date.now()); 
+        window.location.href = "preview.html";
     });
+}
 
-    // Save to User-Specific Key with Timestamp
-    localStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses));
-    localStorage.setItem(EXPENSE_TIME_KEY, Date.now()); 
-    window.location.href = "preview.html";
-});
-
-document.querySelector(".back-btn").addEventListener("click", () => {
-    history.back();
-});
+const backBtn = document.querySelector(".back-btn");
+if (backBtn) {
+    backBtn.addEventListener("click", () => {
+        history.back();
+    });
+}

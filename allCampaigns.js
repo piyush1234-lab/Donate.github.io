@@ -1,13 +1,15 @@
 /*=====================================
     GIFTBLOOM API CONNECTION
 =====================================*/
-const API_URL = "https://script.google.com/macros/s/AKfycbw1_v-AlR_pbcY7ixg6yudi3qW0yzeTXQJzKSL0keggjJIbPUzD4r9JXBmvYV4CL3yn/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyspj1ezHNVn6e0AFTDqhPNHJAnclSB9sbVCLeVOfRIla_RpWuBVJr7jViB1zm-RyD-/exec";
 
 /*=====================================
     LOGIN STATUS & USER DATA
 =====================================*/
-const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
-const currentUser = JSON.parse(localStorage.getItem("currentUser")) || null;
+// Check both localStorage (Remember Me) and sessionStorage (standard login)
+const isLoggedIn = localStorage.getItem("isLoggedIn") === "true" || sessionStorage.getItem("isLoggedIn") === "true";
+const currentUserStr = localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser");
+const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
 
 let currentTab = "Active"; // Tracks Live, Completed, or Blocked
 let globalCampaignsData = []; // Will hold the data from the cloud
@@ -28,7 +30,7 @@ if (sortDropdown) {
     const directSort = urlParams.get('sort');
 
     if (directSort === "MyCampaigns") {
-        if (!isLoggedIn) {
+        if (!isLoggedIn || !currentUser) {
             alert("Please login to view your campaigns.");
             window.location.href = "login.html";
         } else {
@@ -39,6 +41,8 @@ if (sortDropdown) {
     } else {
         sortDropdown.value = "Trending"; 
     }
+
+    sortDropdown.addEventListener("change", renderCampaigns);
 }
 
 /*=====================================
@@ -59,8 +63,9 @@ async function loadAllCampaignsFromCloud() {
     try {
         const response = await fetch(API_URL, {
             method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({
-                action: "getAllCampaigns" // Make sure this action exists in your Google Apps Script!
+                action: "getAllCampaigns"
             })
         });
 
@@ -127,7 +132,7 @@ function renderCampaigns() {
     const sortType = sortDropdown ? sortDropdown.value : "Trending";
 
     // Handle "My Campaigns" Auth Check
-    if (sortType === "MyCampaigns" && !isLoggedIn) {
+    if (sortType === "MyCampaigns" && (!isLoggedIn || !currentUser)) {
         alert("Please login to view your campaigns.");
         if (sortDropdown) sortDropdown.value = "Trending"; 
         window.location.href = "login.html";
@@ -135,7 +140,11 @@ function renderCampaigns() {
     }
 
     if (sortType === "MyCampaigns" && isLoggedIn && currentUser) {
-        filtered = filtered.filter(c => c.ownerId === currentUser.userId || c.ownerId === currentUser.email || c.ownerId === currentUser.id);
+        filtered = filtered.filter(c =>
+            c.ownerId === currentUser.userId ||
+            c.ownerId === currentUser.email ||
+            c.ownerId === currentUser.id
+        );
     } 
 
     // Apply Sorting
@@ -160,17 +169,25 @@ function renderCampaigns() {
             trendingBadge = `<span class="badge" style="${badgeColors}">🔥 Trending</span>`;
         }
 
-             let adminBadge = "";
-// Checks both adminStatus and verified boolean flags
-if (c.adminStatus === "Approved" || c.verified === true || c.verified === "true") {
-    adminBadge = `<span class="badge" style="background:#e3fcef; color:#0b8a38; border:1px solid #0b8a38; margin-left:8px;">✅ Verified</span>`;
-}
+        let adminBadge = "";
+        // Checks both adminStatus and verified boolean flags
+        if (c.adminStatus === "Approved" || c.verified === true || c.verified === "true") {
+            adminBadge = `<span class="badge" style="background:#e3fcef; color:#0b8a38; border:1px solid #0b8a38; margin-left:8px;">✅ Verified</span>`;
+        }
 
- let displayImage = (c.image && c.image.trim() !== "") ? c.image.trim() : "images/teddy.jpg";
-if (displayImage.includes("drive.google.com/uc?id=")) {
-    let fileId = displayImage.split("id=")[1].split("&")[0];
-    displayImage = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w1000";
-}
+        let displayImage = (c.image && c.image.trim() !== "") ? c.image.trim() : "images/teddy.jpg";
+        if (displayImage.includes("drive.google.com")) {
+            let fileId = "";
+            if (displayImage.includes("/file/d/")) {
+                fileId = displayImage.split("/file/d/")[1].split("/")[0];
+            } else if (displayImage.includes("id=")) {
+                fileId = displayImage.split("id=")[1].split("&")[0];
+            }
+            if (fileId) {
+                displayImage = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w1000";
+            }
+        }
+
         container.innerHTML += `
         <div class="card">
             <img src="${displayImage}" alt="Campaign Image" onerror="this.onerror=null; this.src='images/teddy.jpg';">
@@ -198,12 +215,12 @@ if (displayImage.includes("drive.google.com/uc?id=")) {
         DYNAMIC AUTH MENU
 =====================================*/
 function updateNavbar() {
-    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+    const loggedIn = localStorage.getItem("isLoggedIn") === "true" || sessionStorage.getItem("isLoggedIn") === "true";
     const menu = document.getElementById("menu");
 
     if (!menu) return;
 
-    if (isLoggedIn) {
+    if (loggedIn) {
         menu.innerHTML = `
             <li><a href="index.html">Home</a></li>
             <li><a href="allCampaigns.html?sort=MyCampaigns">My Campaigns</a></li>

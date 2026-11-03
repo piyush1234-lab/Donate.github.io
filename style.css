@@ -19,106 +19,6 @@ body{
     overflow-x:hidden;
 }
 
-/*=====================================
-        CANVAS PAGE LOADER
-=====================================*/
-.page-loader {
-    position: fixed;
-    inset: 0;
-    /* Much more visible background - dark but highly transparent */
-    background: rgba(15, 10, 25, 0.4); 
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    z-index: 99999; 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: opacity 0.6s ease, visibility 0.6s ease;
-}
-
-.loader-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative; /* Anchor for the absolute name */
-}
-
-#loaderCanvas {
-    width: 300px;
-    height: 300px;
-    z-index: 1;
-}
-
-.page-loader.fade-out {
-    opacity: 0;
-    visibility: hidden;
-}
-
-/*=====================================
-        TEXT INSIDE THE HEART 
-        (Left-to-Right Shimmer)
-=====================================*/
-.loader-name {
-    position: absolute;
-    top: 43%; /* Vertically centers inside the heart */
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-family: 'Great Vibes', 'Dancing Script', 'Brush Script MT', cursive;
-    font-size: 14px;
-    z-index: 3;
-    pointer-events: none;
-    white-space: nowrap;
-    
-    /* The Traveling Light Gradient */
-    background: linear-gradient(
-        90deg, 
-        rgba(255, 77, 141, 0.3) 0%, 
-        rgba(255, 255, 255, 1) 50%, 
-        rgba(255, 77, 141, 0.3) 100%
-    );
-    background-size: 200% auto;
-    
-    /* Clip the background to the text shape */
-    color: transparent;
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    
-    /* Drop-shadow is used instead of text-shadow for background-clipped text */
-    filter: drop-shadow(0 0 8px rgba(255, 77, 141, 0.8));
-
-    /* Animate the light from left to right */
-    animation: shimmer 1.8s linear infinite;
-}
-
-/* 200% to -200% forces the gradient to move from left to right */
-@keyframes shimmer {
-    0% { background-position: 200% center; }
-    100% { background-position: -200% center; }
-}
-
-/*=====================================
-        BOTTOM STATUS TEXT 
-        (Standard Fade/Glow)
-=====================================*/
-.loader-status {
-    color: #ffb3d9;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    text-shadow: 0 0 10px rgba(255, 77, 141, 0.6);
-    animation: fade-text 1.2s infinite alternate;
-    margin-top: -20px; 
-    z-index: 2;
-}
-
-@keyframes fade-text {
-    0% { opacity: 0.5; text-shadow: 0 0 5px rgba(255, 77, 141, 0.4); }
-    100% { opacity: 1; text-shadow: 0 0 15px rgba(255, 77, 141, 1); }
-}
-
-
 /*==============================
         FLOATING HEARTS
 ==============================*/
@@ -828,10 +728,6 @@ box-shadow:0 15px 25px rgba(255,77,141,.35);
 
 }
 
-/*==============================
-        HOW IT WORKS
-==============================*/
-
 /*=================================
         HOW IT WORKS
 ==================================*/
@@ -1331,7 +1227,7 @@ background:#ff2d78;
 .chat-toggle-btn {
     position: fixed;
     bottom: 30px;
-    right: 30px; /* Positioned exactly like the '+' in the IndianOil screenshot */
+    right: 30px;
     width: 65px;
     height: 65px;
     border-radius: 50%;
@@ -1439,19 +1335,19 @@ background:#ff2d78;
 }
 
 .chat-footer {
-    padding: 12px 15px; /* Slightly adjusted padding for mobile */
+    padding: 12px 15px;
     background: white;
     border-top: 1px solid rgba(0, 0, 0, 0.05);
     display: flex;
-    align-items: center; /* Ensures perfect vertical alignment */
-    justify-content: space-between; /* Pushes input and button apart */
-    gap: 8px; /* Controls the space between input and button */
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
 }
 
 .chat-footer input {
-    flex: 1; /* Tells the input to take available space */
-    min-width: 0; /* 🌟 THE MAGIC FIX: Forces the input to allow itself to shrink! 🌟 */
-    width: 100%; /* Backup constraint */
+    flex: 1;
+    min-width: 0;
+    width: 100%;
     padding: 12px 15px;
     border: 1px solid #ffb3d9;
     border-radius: 25px;
@@ -1465,7 +1361,7 @@ background:#ff2d78;
     background: #ff4d8d;
     color: white;
     border: none;
-    width: 42px; /* Slightly tweaked size for a cleaner fit */
+    width: 42px;
     height: 42px;
     border-radius: 50%;
     cursor: pointer;
@@ -1474,7 +1370,7 @@ background:#ff2d78;
     align-items: center;
     transition: 0.3s;
     font-size: 18px;
-    flex-shrink: 0; /* Tells the button NEVER to shrink */
+    flex-shrink: 0;
 }
 
 .chat-footer button:hover {

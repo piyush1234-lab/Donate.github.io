@@ -1,128 +1,26 @@
 /*=====================================
       API ENDPOINT & AUTH
 =====================================*/
-const API_URL = "https://script.google.com/macros/s/AKfycbw1_v-AlR_pbcY7ixg6yudi3qW0yzeTXQJzKSL0keggjJIbPUzD4r9JXBmvYV4CL3yn/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyspj1ezHNVn6e0AFTDqhPNHJAnclSB9sbVCLeVOfRIla_RpWuBVJr7jViB1zm-RyD-/exec";
 
-const currentUser = JSON.parse(localStorage.getItem("currentUser"));
-const isLoggedIn = currentUser && (currentUser.userId || currentUser.id);
+// Check both localStorage (Remember Me) and sessionStorage (standard login)
+const isPersistentLogin = localStorage.getItem("isLoggedIn") === "true";
+const isSessionLogin = sessionStorage.getItem("isLoggedIn") === "true";
+const currentUserStr = localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser");
+const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
 
-/*=====================================
-      OPTIMIZED CANVAS LOADER
-=====================================*/
-const loaderCanvas = document.getElementById('loaderCanvas');
-let loaderAnimId = null;
-
-if (loaderCanvas) {
-    const ctx = loaderCanvas.getContext('2d');
-    const cw = loaderCanvas.width = 300;
-    const ch = loaderCanvas.height = 300;
-    const cx = cw / 2;
-    const cy = ch / 2 - 20;
-
-    const loggedInUser = currentUser?.name || "";
-    const nameEl = document.getElementById('loaderName');
-    if (nameEl) {
-        nameEl.textContent = loggedInUser ? loggedInUser : "Loading...";
-    }
-
-    const HEART_RES = 256;
-    const hpx = new Float32Array(HEART_RES);
-    const hpy = new Float32Array(HEART_RES);
-
-    for (let i = 0; i < HEART_RES; i++) {
-        const t = (i / HEART_RES) * Math.PI * 2;
-        hpx[i] = 16 * Math.pow(Math.sin(t), 3);
-        hpy[i] = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-    }
-
-    const N = 200; // Optimized particle count for smooth 60fps
-    const particles = [];
-    const colors = ['#ff4d8d', '#ff2b74d', '#4740ff', '#ff1493', '#ff84b7', '#ffb3d9', '#ff40a8'];
-
-    for (let i = 0; i < N; i++) {
-        particles.push({
-            x: cx,
-            y: cy,
-            vx: (Math.random() - 0.5) * 15,
-            vy: (Math.random() - 0.5) * 15,
-            size: Math.random() * 1.2 + 0.8,
-            targetIndex: (i * 7) % HEART_RES,
-            color: colors[Math.floor(Math.random() * colors.length)],
-            offsetT: Math.random() * Math.PI * 2
-        });
-    }
-
-    function animateLoader(time) {
-        ctx.globalCompositeOperation = 'destination-out';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
-        ctx.fillRect(0, 0, cw, ch);
-
-        ctx.globalCompositeOperation = 'lighter';
-
-        const cycle = (time * 0.0013) % 1;
-        let pulse = 0;
-        if (cycle < 0.12) pulse = Math.sin((cycle / 0.12) * Math.PI);
-        else if (cycle > 0.18 && cycle < 0.35) pulse = 0.5 * Math.sin(((cycle - 0.18) / 0.17) * Math.PI);
-        const hs = 2.25 * (1 + pulse * 0.15);
-
-        const activeIndex = (time * 0.10) % HEART_RES;
-
-        for (let i = 0; i < N; i++) {
-            let p = particles[i];
-            let tx = cx + hpx[p.targetIndex] * hs;
-            let ty = cy + hpy[p.targetIndex] * hs;
-
-            p.vx += (tx - p.x) * 0.08;
-            p.vy += (ty - p.y) * 0.08;
-            p.vx += Math.sin(time * 0.002 + p.offsetT) * 0.03;
-            p.vy += Math.cos(time * 0.002 + p.offsetT) * 0.03;
-            p.vx *= 0.75;
-            p.vy *= 0.75;
-            p.x += p.vx;
-            p.y += p.vy;
-
-            ctx.beginPath();
-            let diff = (activeIndex - p.targetIndex + HEART_RES) % HEART_RES;
-
-            if (diff < 25) {
-                const intensity = 1 - (diff / 25);
-                ctx.arc(p.x, p.y, p.size * (1 + intensity * 0.6), 0, Math.PI * 2);
-                ctx.fillStyle = '#ff2b74';
-                ctx.fill();
-            } else {
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fillStyle = p.color;
-                ctx.fill();
-            }
-        }
-
-        loaderAnimId = requestAnimationFrame(animateLoader);
-    }
-
-    window.startLoaderCanvas = function () {
-        if (!loaderAnimId) {
-            loaderAnimId = requestAnimationFrame(animateLoader);
-        }
-    };
-
-    window.stopLoaderCanvas = function () {
-        if (loaderAnimId) {
-            cancelAnimationFrame(loaderAnimId);
-            loaderAnimId = null;
-        }
-    };
-}
+const isLoggedIn = (isPersistentLogin || isSessionLogin) && currentUser && (currentUser.userId || currentUser.id);
 
 /*=====================================
         DYNAMIC AUTH MENU
 =====================================*/
 function updateNavbar() {
-    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+    const loggedIn = localStorage.getItem("isLoggedIn") === "true" || sessionStorage.getItem("isLoggedIn") === "true";
     const menu = document.getElementById("menu");
 
     if (!menu) return;
 
-    if (isLoggedIn) {
+    if (loggedIn) {
         menu.innerHTML = `
             <li><a href="index.html">Home</a></li>
             <li><a href="allCampaigns.html?sort=MyCampaigns">My Campaigns</a></li>
@@ -289,7 +187,6 @@ function animateCounters() {
 =====================================*/
 async function fetchHomepageData(isReload = false) {
     const campaignsContainer = document.getElementById("trendingCampaigns");
-    const loader = document.getElementById("pageLoader");
 
     const startSpin = () => {
         const icon = document.getElementById("reloadIcon");
@@ -302,23 +199,10 @@ async function fetchHomepageData(isReload = false) {
 
     if (isReload) {
         startSpin();
-    } else {
-        const hasVisitedBefore = sessionStorage.getItem("giftbloomVisited") === "true";
-
-        if (hasVisitedBefore && loader) {
-            loader.style.display = "flex";
-            loader.classList.remove("fade-out");
-            if (typeof window.startLoaderCanvas === "function") window.startLoaderCanvas();
-        } else {
-            sessionStorage.setItem("giftbloomVisited", "true");
-        }
-
-        if (campaignsContainer) {
-            campaignsContainer.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px;">Loading live campaigns... ⏳</div>`;
-        }
+    } else if (campaignsContainer) {
+        campaignsContainer.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px;">Loading live campaigns... ⏳</div>`;
     }
 
-    // Yield control to let browser render loader UI immediately before fetching
     await new Promise(r => setTimeout(r, 20));
 
     const controller = new AbortController();
@@ -329,6 +213,7 @@ async function fetchHomepageData(isReload = false) {
         const [response] = await Promise.all([
             fetch(API_URL, {
                 method: "POST",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
                 body: JSON.stringify({ action: "getAllCampaigns" }),
                 signal: controller.signal
             }),
@@ -366,13 +251,6 @@ async function fetchHomepageData(isReload = false) {
         }
     } finally {
         stopSpin();
-        if (loader && loader.style.display !== "none") {
-            loader.classList.add("fade-out");
-            setTimeout(() => {
-                loader.style.display = "none";
-                if (typeof window.stopLoaderCanvas === "function") window.stopLoaderCanvas();
-            }, 600);
-        }
     }
 }
 
@@ -441,42 +319,48 @@ function renderTrendingCampaigns(campaigns, containerElement) {
         return;
     }
 
-            activeCampaigns.forEach((campaign) => {
-            const raised = Number(campaign.raisedAmount) || 0;
-            const target = Number(campaign.targetAmount) || 0;
+    activeCampaigns.forEach((campaign) => {
+        const raised = Number(campaign.raisedAmount) || 0;
+        const target = Number(campaign.targetAmount) || 0;
 
-            let percent = target > 0 ? Math.round((raised / target) * 100) : 0;
-            if (percent > 100) percent = 100;
+        let percent = target > 0 ? Math.round((raised / target) * 100) : 0;
+        if (percent > 100) percent = 100;
 
-            let displayImage = 'images/teddy.jpg';
-            if (campaign.giftImageUrl && campaign.giftImageUrl.trim() !== "") {
-                displayImage = campaign.giftImageUrl.trim();
-                if (displayImage.includes("drive.google.com/uc?id=")) {
-                    let fileId = displayImage.split("id=")[1].split("&")[0];
+        let displayImage = 'images/teddy.jpg';
+        if (campaign.giftImageUrl && campaign.giftImageUrl.trim() !== "") {
+            displayImage = campaign.giftImageUrl.trim();
+            if (displayImage.includes("drive.google.com")) {
+                let fileId = "";
+                if (displayImage.includes("/file/d/")) {
+                    fileId = displayImage.split("/file/d/")[1].split("/")[0];
+                } else if (displayImage.includes("id=")) {
+                    fileId = displayImage.split("id=")[1].split("&")[0];
+                }
+                if (fileId) {
                     displayImage = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w1000";
                 }
             }
+        }
 
-            // Checks both adminStatus and verified boolean flags
-            let adminBadge = "";
-            if (campaign.adminStatus === "Approved" || campaign.verified === true || campaign.verified === "true") {
-                adminBadge = `<span style="background:#e3fcef; color:#0b8a38; border:1px solid #0b8a38; font-size:11px; padding:2px 8px; border-radius:12px; margin-left:6px; display:inline-block; vertical-align:middle;">✅ Verified</span>`;
-            }
+        let adminBadge = "";
+        if (campaign.adminStatus === "Approved" || campaign.verified === true || campaign.verified === "true") {
+            adminBadge = `<span style="background:#e3fcef; color:#0b8a38; border:1px solid #0b8a38; font-size:11px; padding:2px 8px; border-radius:12px; margin-left:6px; display:inline-block; vertical-align:middle;">✅ Verified</span>`;
+        }
 
-            container.innerHTML += `
-            <div class="glass card">
-                <div class="card-image">
-                    <img src="${displayImage}" alt="Gift" onerror="this.onerror=null; this.src='images/teddy.jpg';">
-                    <div class="badge">❤️ Trending</div>
+        container.innerHTML += `
+        <div class="glass card">
+            <div class="card-image">
+                <img src="${displayImage}" alt="Gift" onerror="this.onerror=null; this.src='images/teddy.jpg';">
+                <div class="badge">❤️ Trending</div>
+            </div>
+            <div class="content">
+                <div style="margin-bottom: 8px;">
+                    <span style="background: rgba(255, 77, 141, 0.1); border: 1px solid rgba(255, 77, 141, 0.3); color: #ff4d8d; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; display: inline-block; letter-spacing: 0.5px;">
+                        🆔 ${campaign.campaignId}
+                    </span>
                 </div>
-                <div class="content">
-                    <div style="margin-bottom: 8px;">
-                        <span style="background: rgba(255, 77, 141, 0.1); border: 1px solid rgba(255, 77, 141, 0.3); color: #ff4d8d; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; display: inline-block; letter-spacing: 0.5px;">
-                            🆔 ${campaign.campaignId}
-                        </span>
-                    </div>
-                    
-                    <h3 style="margin-top: 5px;">${campaign.gift || 'Surprise Gift'} ${adminBadge}</h3>
+                
+                <h3 style="margin-top: 5px;">${campaign.gift || 'Surprise Gift'} ${adminBadge}</h3>
                 <p class="receiver">For ${campaign.receiver || 'Someone Special'} ❤️</p>
                 
                 <div class="progress-details">
@@ -501,7 +385,6 @@ function renderTrendingCampaigns(campaigns, containerElement) {
     if (typeof initCardTilt === "function") initCardTilt();
 }
 
-// Trigger initial homepage data fetch
 fetchHomepageData();
 
 /*=====================================
@@ -545,12 +428,58 @@ function stripActionsTag(text) {
     return text.replace(/\[ACTIONS:.*?\]/gi, '').trim();
 }
 
+/*----- Page buttons the AI can suggest -----
+  The backend asks Gemini to end a reply with a tag like  [ACTIONS: create, browse]
+  Each key inside it becomes its own button that OPENS the matching page.
+  (Allowed keys are the ones listed in askAI() in the backend.) */
+const ACTION_PAGES = {
+    create:    { label: "➕ Create Campaign",  url: "create.html" },
+    browse:    { label: "👀 Browse Campaigns", url: "allCampaigns.html" },
+    login:     { label: "🔑 Login",            url: "login.html" },
+    signup:    { label: "📝 Sign Up",          url: "signup.html" },
+    dashboard: { label: "📊 My Dashboard",     url: "dashboard(combined).html" }
+};
+
+// "[ACTIONS: create, browse]"  ->  ["create", "browse"]  (unknown keys are ignored)
 function detectSuggestedActions(text) {
     if (!text) return [];
-    const matches = [...text.matchAll(/\[ACTIONS:(.*?)\]/gi)];
-    return matches.map(m => m[1].trim());
+    const keys = [];
+    for (const m of text.matchAll(/\[ACTIONS:(.*?)\]/gi)) {
+        m[1].split(",").forEach(part => {
+            const key = part.trim().toLowerCase();
+            if (Object.prototype.hasOwnProperty.call(ACTION_PAGES, key) && !keys.includes(key)) keys.push(key);
+        });
+    }
+    return keys;
 }
 
+// Buttons that open a page when tapped (used for the AI's [ACTIONS: ...] suggestions)
+function appendPageButtons(keys) {
+    const loggedIn = localStorage.getItem("isLoggedIn") === "true" || sessionStorage.getItem("isLoggedIn") === "true";
+
+    // The AI can't see if the visitor is logged in, so tidy the list here
+    keys = keys
+        .map(k => (!loggedIn && k === "dashboard") ? "login" : k)         // dashboard needs a login
+        .filter(k => !(loggedIn && (k === "login" || k === "signup")))    // already logged in
+        .filter((k, i, all) => all.indexOf(k) === i);                     // no duplicates
+    if (keys.length === 0) return;
+
+    const container = document.createElement("div");
+    container.className = "chat-buttons";
+
+    keys.forEach(key => {
+        const btn = document.createElement("button");
+        btn.className = "chat-action-btn";
+        btn.textContent = ACTION_PAGES[key].label;
+        btn.onclick = () => { window.location.href = ACTION_PAGES[key].url; };
+        container.appendChild(btn);
+    });
+
+    chatBody.appendChild(container);
+    chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+// Quick-question chips (tapping one SENDS that question to the assistant)
 function appendActionButtons(actions) {
     if (!actions || actions.length === 0) return;
 
@@ -610,8 +539,8 @@ async function fetchGeminiResponse(userText) {
 
         if (result.status === "Success") {
             const cleanReply = stripActionsTag(result.data.reply);
-            appendMessage(cleanReply, "bot");
-            appendActionButtons(detectSuggestedActions(result.data.reply));
+            if (cleanReply) appendMessage(cleanReply, "bot");
+            appendPageButtons(detectSuggestedActions(result.data.reply));
 
             chatHistory.push({ role: "user", text: userText });
             chatHistory.push({ role: "model", text: result.data.reply });
@@ -649,12 +578,11 @@ if (sendChat && chatInput) {
 const FIXED_NATIONAL_DAYS = {
     "01-26": "Happy Republic Day! 🇮🇳",
     "08-15": "Happy Independence Day! 🇮🇳",
-    "10-2": "Happy Gandhi Jayanti! 🙏",
+    "10-02": "Happy Gandhi Jayanti! 🙏",
     "12-25": "Merry Christmas! 🎄",
 };
 
 const REGIONAL_FESTIVALS = {
-    "Durga Puja": ["West Bengal", "Tripura", "Assam", "Odisha"],
     "Kali Puja": ["West Bengal"],
     "Poila Boishakh": ["West Bengal"],
     "Ganesh Chaturthi": ["Maharashtra", "Goa", "Karnataka", "Telangana"],
@@ -663,7 +591,6 @@ const REGIONAL_FESTIVALS = {
     "Hartalika Teej": ["Rajasthan"],
     "Kajari Teej": ["Rajasthan"],
     "Gangaur": ["Rajasthan"],
-    "Navratri": ["Gujarat"],
     "Garba": ["Gujarat"],
     "Onam": ["Kerala"],
     "Vishu": ["Kerala"],
@@ -681,6 +608,17 @@ const REGIONAL_FESTIVALS = {
     "Janmasthmi" : ["Uttar Pradesh", "West Bengal"]
 };
 
+const GIFT_DAYS = /valentine|mother|father|friendship|teacher|women|children/i;
+const SKIP_EVENTS = /punyatithi|shaheed|muharram|good friday|jamat ul-vida|equinox|shortest day|bank'?s holiday/i;
+
+const DUSSEHRA_GREETING = "Happy Dussehra! 🏹 Shubho Bijoya — may good always win 🌟";
+
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[c]));
+}
+
 function findRegionalMatch(eventName) {
     const key = Object.keys(REGIONAL_FESTIVALS).find(name =>
         eventName.toLowerCase().includes(name.toLowerCase()) ||
@@ -689,32 +627,106 @@ function findRegionalMatch(eventName) {
     return key ? REGIONAL_FESTIVALS[key] : null;
 }
 
-async function getTodaysFestival(userState) {
-    const now = new Date();
-    const fixedKey = `${now.getMonth() + 1}-${now.getDate()}`;
-    if (FIXED_NATIONAL_DAYS[fixedKey]) return FIXED_NATIONAL_DAYS[fixedKey];
+function fileEntryDate(key) {
+    return new Date(key.split(", ").slice(0, 2).join(", "));
+}
 
-    const year = now.getFullYear();
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+
+function findFileDates(data, year, test) {
+    const dates = [];
+    for (const month of Object.values(data[year] || {})) {
+        for (const [key, e] of Object.entries(month)) {
+            if (e && test(e)) dates.push(fileEntryDate(key));
+        }
+    }
+    return dates.sort((a, b) => a - b);
+}
+
+function getNavratriWindow(data, year) {
+    const withTag = re => findFileDates(data, year, e => re.test(e.extras || ""));
+    const pratipada = withTag(/Ashwina, Shukla Pratipada/);
+    const ashtami = withTag(/Ashwina, Shukla Ashtami/);
+    const navami = withTag(/Ashwina, Shukla Navami/);
+    const named = findFileDates(data, year, e => /dussehra|vijayadashami|dasara/i.test(e.event || ""));
+    const last = list => list[list.length - 1];
+
+    const dussehra = named[0]
+        || (navami.length && addDays(last(navami), 1))
+        || (ashtami.length && addDays(last(ashtami), 2))
+        || (pratipada.length && addDays(pratipada[0], 9));
+    if (!dussehra) return null;
+
+    let start = addDays(dussehra, -9);
+    if (pratipada.length) {
+        const gap = Math.round((dussehra - pratipada[0]) / 864e5);
+        if (gap >= 7 && gap <= 11) start = pratipada[0];
+    }
+    return { start, dussehra };
+}
+
+function getNavratriGreeting(data, now) {
+    const w = getNavratriWindow(data, now.getFullYear());
+    if (!w) return null;
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const sinceStart = Math.round((today - w.start) / 864e5);
+    const toDussehra = Math.round((w.dussehra - today) / 864e5);
+    if (sinceStart === -1) return "Shubho Mahalaya! 🙏 Maa Durga is on her way 🪔";
+    if (sinceStart >= 0 && toDussehra >= 1) return "Happy Navratri! 🪔";
+    if (toDussehra === 0) return DUSSEHRA_GREETING;
+    return null;
+}
+
+async function loadCalendar(year) {
     const cacheKey = `festivalCache_${year}`;
     const cacheTimeKey = `festivalCacheTime_${year}`;
     const ONE_DAY = 24 * 60 * 60 * 1000;
 
-    let calendarData = null;
-    const cached = localStorage.getItem(cacheKey);
-    const cachedTime = localStorage.getItem(cacheTimeKey);
-
-    if (cached && cachedTime && (Date.now() - Number(cachedTime)) < ONE_DAY) {
-        calendarData = JSON.parse(cached);
-    } else {
-        try {
-            const res = await fetch(`https://jayantur13.github.io/calendar-bharat/calendar/${year}.json`);
-            calendarData = await res.json();
-            localStorage.setItem(cacheKey, JSON.stringify(calendarData));
-            localStorage.setItem(cacheTimeKey, Date.now().toString());
-        } catch (e) {
-            return null;
+    let cachedData = null, fresh = false;
+    try {
+        const raw = localStorage.getItem(cacheKey);
+        if (raw) {
+            cachedData = JSON.parse(raw);
+            fresh = (Date.now() - Number(localStorage.getItem(cacheTimeKey))) < ONE_DAY;
         }
+    } catch (e) { cachedData = null; }
+    if (cachedData && fresh) return cachedData;
+
+    try {
+        const res = await fetch(`https://jayantur13.github.io/calendar-bharat/calendar/${year}.json`);
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const data = await res.json();
+        try {
+            localStorage.setItem(cacheKey, JSON.stringify(data));
+            localStorage.setItem(cacheTimeKey, Date.now().toString());
+        } catch (e) {}
+        return data;
+    } catch (e) {
+        console.log("[festival] calendar load failed:", e.message);
+        return cachedData;
     }
+}
+
+async function getTodaysFestival(userState) {
+    const q = new URLSearchParams(location.search);
+    let now = new Date();
+    const testDate = q.get("testDate");
+    if (testDate) {
+        const t = new Date(testDate + "T12:00:00");
+        if (!isNaN(t)) now = t;
+    }
+    userState = q.get("testState") || userState;
+
+    const pad = n => String(n).padStart(2, "0");
+    const fixedLine = FIXED_NATIONAL_DAYS[`${pad(now.getMonth() + 1)}-${pad(now.getDate())}`] || null;
+
+    const year = now.getFullYear();
+    const calendarData = await loadCalendar(year);
+
+    const navLine = calendarData ? getNavratriGreeting(calendarData, now) : null;
+
+    if (navLine || fixedLine) return [navLine, fixedLine].filter(Boolean).join("<br>");
+
     if (!calendarData) return null;
 
     const monthYear = now.toLocaleDateString("en-US", { month: "long", year: "numeric" });
@@ -728,17 +740,22 @@ async function getTodaysFestival(userState) {
     if (!matchKey) return null;
 
     const entry = monthData[matchKey];
-    if (!entry || entry.type === "Good to know") return null;
+    if (!entry || !entry.event) return null;
+
+    if (/Ashwina, Shukla Dashami/.test(entry.extras || "")) return DUSSEHRA_GREETING;
+
+    if (SKIP_EVENTS.test(entry.event)) return null;
+    if (entry.type === "Good to know" && !GIFT_DAYS.test(entry.event)) return null;
 
     const restriction = findRegionalMatch(entry.event);
     if (restriction) {
         if (userState && restriction.some(s => userState.toLowerCase().includes(s.toLowerCase()))) {
-            return `Happy ${entry.event}! 🎉`;
+            return `Happy ${escapeHtml(entry.event)}! 🎉`;
         }
         return null;
     }
 
-    return `Happy ${entry.event}! 🎉`;
+    return `Happy ${escapeHtml(entry.event)}! 🎉`;
 }
 
 async function detectUserLocation() {
@@ -746,30 +763,22 @@ async function detectUserLocation() {
     const ONE_DAY = 24 * 60 * 60 * 1000;
     if (lastFetched && (Date.now() - Number(lastFetched)) < ONE_DAY) return;
 
-    // 1. Try GeoJS first (silent, no permission popup)
     try {
         const res = await fetch("https://get.geojs.io/v1/ip/geo.json");
         if (!res.ok) throw new Error("GeoJS response not OK");
         const geo = await res.json();
-        const state = geo.region || null; // e.g. "West Bengal"
+        const state = geo.region || null;
 
         if (state) {
-            console.log("✅ GeoJS working — state detected:", state);
             localStorage.setItem("userState", state);
             localStorage.setItem("userStateTimestamp", Date.now());
-            return; // success, no need for fallback
+            return;
         } else {
             throw new Error("GeoJS returned no region");
         }
-    } catch (e) {
-        console.log("❌ GeoJS failed:", e.message, "— falling back to navigator.geolocation");
-    }
+    } catch (e) {}
 
-    // 2. Fallback: navigator.geolocation (will show browser permission popup)
-    if (!navigator.geolocation) {
-        console.log("❌ navigator.geolocation not supported on this browser");
-        return;
-    }
+    if (!navigator.geolocation) return;
 
     navigator.geolocation.getCurrentPosition(async (pos) => {
         try {
@@ -779,19 +788,11 @@ async function detectUserLocation() {
             const state = geo.principalSubdivision || null;
 
             if (state) {
-                console.log("✅ navigator.geolocation working — state detected:", state);
                 localStorage.setItem("userState", state);
                 localStorage.setItem("userStateTimestamp", Date.now());
-            } else {
-                console.log("⚠️ navigator.geolocation succeeded but reverse-geocode returned no state");
             }
-        } catch (e) {
-            console.log("❌ navigator.geolocation reverse-geocode failed:", e.message);
-        }
-    }, (err) => {
-        console.log("❌ navigator.geolocation denied or unavailable:", err.message);
-        // fail silently — chatbot just skips state-specific occasion lines
-    }, { timeout: 8000, maximumAge: ONE_DAY });
+        } catch (e) {}
+    }, (err) => {}, { timeout: 8000, maximumAge: ONE_DAY });
 }
 
 function getStoredUserState() {
@@ -805,7 +806,7 @@ detectUserLocation();
 =====================================*/
 function getStoredUserName() {
     try {
-        const userJson = localStorage.getItem("currentUser");
+        const userJson = localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser");
         if (!userJson) return null;
         const user = JSON.parse(userJson);
         return user.name || null;
@@ -823,19 +824,23 @@ function appendHtmlMessage(html) {
 }
 
 async function buildWelcomeMessage() {
-    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+    const loggedIn = localStorage.getItem("isLoggedIn") === "true" || sessionStorage.getItem("isLoggedIn") === "true";
     const userName = getStoredUserName();
     const userState = getStoredUserState();
-    const occasionLine = await getTodaysFestival(userState);
 
-    const greeting = isLoggedIn && userName
-        ? `Hi ${userName}! 👋`
+    let occasionLine = null;
+    try {
+        occasionLine = await getTodaysFestival(userState);
+    } catch (e) {}
+
+    const greeting = loggedIn && userName
+        ? `Hi ${escapeHtml(userName)}! 👋`
         : `Hi there! 👋 Welcome to GiftBloom.`;
 
     let lines = [greeting];
     if (occasionLine) lines.push(occasionLine);
 
-    if (isLoggedIn) {
+    if (loggedIn) {
         lines.push("I am here to help you choose the suitable gift for your friend and can help you explore the GiftBloom page.");
         appendHtmlMessage(lines.join("<br>"));
     } else {

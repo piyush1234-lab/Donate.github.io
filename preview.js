@@ -1,21 +1,24 @@
 /*=====================================
         API & USER KEYS
 =====================================*/
-const API_URL = "https://script.google.com/macros/s/AKfycbw1_v-AlR_pbcY7ixg6yudi3qW0yzeTXQJzKSL0keggjJIbPUzD4r9JXBmvYV4CL3yn/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyspj1ezHNVn6e0AFTDqhPNHJAnclSB9sbVCLeVOfRIla_RpWuBVJr7jViB1zm-RyD-/exec";
 
-// Put this on protected pages
-const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+// Check both localStorage (Remember Me) and sessionStorage (standard login)
+const isPersistentLogin = localStorage.getItem("isLoggedIn") === "true";
+const isSessionLogin = sessionStorage.getItem("isLoggedIn") === "true";
+const currentUserStr = localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser");
+const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
 
-if (!currentUser || (!currentUser.userId && !currentUser.id)) {
+if ((!isPersistentLogin && !isSessionLogin) || !currentUser || (!currentUser.userId && !currentUser.id)) {
     alert("You must be logged in to view this page.");
     window.location.href = "login.html";
 }
 
-
-const DRAFT_KEY = "draftData_" + currentUser.userId;
-const EXPENSES_KEY = "campaignExpenses_" + currentUser.userId;
-const DRAFT_TIME_KEY = "draftTime_" + currentUser.userId;
-const EXPENSE_TIME_KEY = "expenseTime_" + currentUser.userId;
+const activeUserId = (currentUser && (currentUser.userId || currentUser.id)) || "";
+const DRAFT_KEY = "draftData_" + activeUserId;
+const EXPENSES_KEY = "campaignExpenses_" + activeUserId;
+const DRAFT_TIME_KEY = "draftTime_" + activeUserId;
+const EXPENSE_TIME_KEY = "expenseTime_" + activeUserId;
 
 /*=====================================
         MOBILE MENU
@@ -23,26 +26,28 @@ const EXPENSE_TIME_KEY = "expenseTime_" + currentUser.userId;
 const menuBtn = document.getElementById("menuBtn");
 const menu = document.getElementById("menu");
 
-menuBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    menu.classList.toggle("show");
-});
+if (menuBtn && menu) {
+    menuBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        menu.classList.toggle("show");
+    });
 
-document.querySelectorAll("#menu a").forEach(link => {
-    link.addEventListener("click", () => menu.classList.remove("show"));
-});
+    document.querySelectorAll("#menu a").forEach(link => {
+        link.addEventListener("click", () => menu.classList.remove("show"));
+    });
 
-document.addEventListener("click", (e) => {
-    if (!menu.contains(e.target) && !menuBtn.contains(e.target)) {
-        menu.classList.remove("show");
-    }
-});
+    document.addEventListener("click", (e) => {
+        if (!menu.contains(e.target) && !menuBtn.contains(e.target)) {
+            menu.classList.remove("show");
+        }
+    });
+}
 
 /*=====================================
       FLOATING HEARTS
 =====================================*/
 const hearts = document.querySelector(".hearts");
-for(let i=0; i<18; i++){
+for (let i = 0; i < 18; i++) {
     let heart = document.createElement("div");
     heart.className = "heart";
     heart.innerHTML = "❤";
@@ -59,7 +64,7 @@ for(let i=0; i<18; i++){
 const campaign = JSON.parse(localStorage.getItem(DRAFT_KEY));
 const expenses = JSON.parse(localStorage.getItem(EXPENSES_KEY)) || [];
 
-if(!campaign || expenses.length === 0){
+if (!campaign || expenses.length === 0) {
     alert("Access Denied ❌❌");
     window.location.href = "create.html?new=true";
 }
@@ -77,7 +82,7 @@ document.getElementById("story").innerText = campaign.story || "No story provide
 
 // Load Images
 const giftPreview = document.getElementById("giftPreview");
-if(campaign.giftImageBase64){
+if (campaign.giftImageBase64) {
     giftPreview.src = campaign.giftImageBase64;
 } else {
     giftPreview.style.display = "none";
@@ -87,7 +92,7 @@ const qrPreview = document.getElementById("qrPreview");
 const qrDeletedText = document.getElementById("qrDeletedText");
 const upiIdPreview = document.getElementById("upiIdPreview");
 
-if(campaign.qrImageBase64){
+if (campaign.qrImageBase64) {
     qrPreview.src = campaign.qrImageBase64;
 } else {
     qrPreview.style.display = "none";
@@ -140,7 +145,7 @@ const newQrUpload = document.getElementById("newQrUpload");
 const qrScanStatus = document.getElementById("qrScanStatus");
 const upiMatchError = document.getElementById("upiMatchError");
 
-if(newQrUpload) {
+if (newQrUpload) {
     newQrUpload.addEventListener("change", (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -169,8 +174,8 @@ if(newQrUpload) {
                     let upiId = "Unknown UPI ID";
                     try {
                         const params = new URLSearchParams(code.data.substring(code.data.indexOf('?')));
-                        if(params.has('pa')) upiId = params.get('pa');
-                    } catch(err) {}
+                        if (params.has('pa')) upiId = params.get('pa');
+                    } catch (err) {}
                     
                     newlyScannedUpi = upiId;
                     qrScanStatus.innerText = "✅ QR Scanned Successfully!";
@@ -194,23 +199,23 @@ function checkMatch() {
     if (val === "" || newlyScannedUpi === "") {
         upiTick.style.display = "none";
         updateUpiBtn.style.display = "none";
-        if(upiMatchError) upiMatchError.style.display = "none";
+        if (upiMatchError) upiMatchError.style.display = "none";
         return;
     }
     if (val === newlyScannedUpi) {
         upiTick.style.display = "inline";
         updateUpiBtn.style.display = "block";
-        if(upiMatchError) upiMatchError.style.display = "none";
+        if (upiMatchError) upiMatchError.style.display = "none";
     } else {
         upiTick.style.display = "none";
         updateUpiBtn.style.display = "none";
-        if(upiMatchError) upiMatchError.style.display = "block";
+        if (upiMatchError) upiMatchError.style.display = "block";
     }
 }
 
-if(newUpiInput) newUpiInput.addEventListener("input", checkMatch);
+if (newUpiInput) newUpiInput.addEventListener("input", checkMatch);
 
-if(updateUpiBtn) {
+if (updateUpiBtn) {
     updateUpiBtn.addEventListener("click", () => {
         alert("The QR image and UPI ID have been successfully updated.");
         const newUpi = newUpiInput.value.trim();
@@ -223,7 +228,7 @@ if(updateUpiBtn) {
         if (newQrBase64) {
             qrPreview.src = newQrBase64;
             qrPreview.style.display = "block";
-            if(qrDeletedText) qrDeletedText.style.display = "none";
+            if (qrDeletedText) qrDeletedText.style.display = "none";
         }
         
         upiIdPreview.value = newUpi;
@@ -260,8 +265,10 @@ document.getElementById("progressFill").style.width = Math.min(percent, 100) + "
 /*=====================================
       BACK & EDIT BUTTONS
 =====================================*/
-document.querySelector(".back-btn").onclick = () => { history.back(); };
-document.getElementById("editBtn").onclick = () => { window.location = "create.html"; };
+const backBtn = document.querySelector(".back-btn");
+if (backBtn) backBtn.onclick = () => { history.back(); };
+const editBtn = document.getElementById("editBtn");
+if (editBtn) editBtn.onclick = () => { window.location = "create.html"; };
 
 /*=====================================
       PUBLISH (TO GOOGLE SHEETS)
@@ -271,7 +278,7 @@ document.getElementById("publishBtn").addEventListener("click", async () => {
     const agree1 = document.getElementById("agree1");
     const agree2 = document.getElementById("agree2");
 
-    if(!agree1.checked || !agree2.checked){
+    if (!agree1.checked || !agree2.checked) {
         alert("Please accept both agreements to proceed.");
         return;
     }
@@ -286,10 +293,10 @@ document.getElementById("publishBtn").addEventListener("click", async () => {
     }
     
     // 🔥 STRICT PAYLOAD CONSTRUCTION
-    // We map every property explicitly to ensure it matches the backend schema perfectly.
     const payloadData = {
         campaignId: campaign.campaignId,
-        ownerId: currentUser.userId,
+        ownerId: activeUserId,
+        token: currentUser?.token || "",
         gift: campaign.gift || "",
         receiver: campaign.receiver || "",
         creator: campaign.creator || "",
@@ -309,6 +316,7 @@ document.getElementById("publishBtn").addEventListener("click", async () => {
         // 1. SEND TO GOOGLE SHEETS BACKEND
         const response = await fetch(API_URL, {
             method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({ action: "createCampaign", data: payloadData })
         });
         
@@ -336,7 +344,6 @@ document.getElementById("publishBtn").addEventListener("click", async () => {
 
             // 4. TRANSITION TO SUCCESS
             alert("Campaign Published Successfully ❤️");
-            // Pass the campaign ID in the URL for the success page to read
             window.location.href = "success.html?id=" + encodeURIComponent(campaign.campaignId);
         } else {
             throw new Error(result.message || "Unknown server error");

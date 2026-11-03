@@ -2968,101 +2968,345 @@ padding:10px;
     .insights-grid { grid-template-columns: 1fr; }
 }
 
-/*=====================================
-        CANVAS PAGE LOADER
-=====================================*/
-.page-loader {
-    position: fixed;
-    inset: 0;
-    /* Much more visible background - dark but highly transparent */
-    background: rgba(15, 10, 25, 0.4); 
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    z-index: 99999; 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: opacity 0.6s ease, visibility 0.6s ease;
+/*=====================================================================
+  PROFILE SECURITY - Single Edit Button, Dynamic Save, Verify Pill & Modals
+=====================================================================*/
+
+/*----- Label Row (for User ID lock tag & Email Verify pill) -----*/
+.field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 18px 0 8px;
 }
 
-.loader-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative; /* Anchor for the absolute name */
+.field-label-row label {
+  margin: 0 !important;
 }
 
-#loaderCanvas {
-    width: 300px;
-    height: 300px;
-    z-index: 1;
+/*----- User ID badge (visible only while editing profile) -----*/
+.lock-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: rgba(255, 77, 141, 0.12);
+  color: #ff4d8d;
+  font-size: 12px;
+  font-weight: 600;
 }
 
-.page-loader.fade-out {
-    opacity: 0;
-    visibility: hidden;
+.lock-tag[hidden] {
+  display: none !important;
 }
 
-/*=====================================
-        TEXT INSIDE THE HEART 
-        (Left-to-Right Shimmer)
-=====================================*/
-.loader-name {
-    position: absolute;
-    top: 43%; /* Vertically centers inside the heart */
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-family: 'Great Vibes', 'Dancing Script', 'Brush Script MT', cursive;
+/*----- Premium Verify Email Pill (matches campaign Verified badge) -----*/
+.verify-email-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1.5px solid #66bb6a;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(46, 125, 50, 0.12);
+  transition: all 0.25s ease;
+}
+
+.verify-email-pill[hidden] {
+  display: none !important;
+}
+
+.verify-email-pill:hover {
+  background: #c8e6c9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.22);
+}
+
+.verify-pill-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+
+/*----- Locked vs Unlocked Profile Fields -----*/
+.profile-card input:disabled,
+.profile-card select:disabled,
+.profile-card textarea:disabled {
+  background: rgba(255, 255, 255, 0.55);
+  color: #555;
+  -webkit-text-fill-color: #555;
+  opacity: 1;
+  cursor: not-allowed;
+  resize: none;
+}
+
+.profile-card .field-unlocked {
+  background: #fff !important;
+  box-shadow: 0 0 0 2px rgba(255, 77, 141, 0.22);
+}
+
+.profile-card .field-unlocked:focus {
+  box-shadow: 0 0 0 3px rgba(255, 77, 141, 0.4) !important;
+}
+
+/*----- Edit Profile + Save Changes Button Row (Below Bio) -----*/
+.profile-edit-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 22px;
+  width: 100%;
+}
+
+.profile-edit-actions .primary {
+  flex: 1 1 0;
+  margin-top: 0 !important;
+  padding: 16px 20px;
+}
+
+.profile-edit-actions .edit-profile-btn.editing-active {
+  background: rgba(255, 255, 255, 0.9);
+  color: #ff4d8d;
+  border: 2px solid rgba(255, 77, 141, 0.35);
+}
+
+.profile-edit-actions .edit-profile-btn.editing-active:hover {
+  background: #ffeef5;
+}
+
+#saveProfile[hidden] {
+  display: none !important;
+}
+
+.profile-hint {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 13px;
+  color: #888;
+}
+
+/*----- Code & Password Modals -----*/
+.otp-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 10, 25, 0.45);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.otp-overlay.show {
+  display: flex;
+}
+
+.otp-card {
+  width: 100%;
+  max-width: 410px;
+  padding: 30px 24px 22px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+  text-align: center;
+  animation: otpIn 0.25s ease;
+}
+
+@keyframes otpIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+.otp-card h2 {
+  font-size: 22px;
+  color: #ff4d8d;
+  margin-bottom: 8px;
+}
+
+.otp-sub {
+  margin-bottom: 18px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #666;
+}
+
+.otp-sub b {
+  color: #333;
+  word-break: break-all;
+}
+
+.otp-card .otp-input {
+  width: 100%;
+  padding: 14px 10px 14px 22px;
+  border: 2px solid rgba(255, 77, 141, 0.25);
+  border-radius: 16px;
+  background: #fff;
+  color: #333;
+  text-align: center;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 12px;
+}
+
+.otp-card .otp-input::placeholder {
+  color: #dcc6d2;
+  letter-spacing: 12px;
+}
+
+.otp-card .otp-input:focus {
+  border-color: #ff4d8d;
+  box-shadow: 0 0 0 4px rgba(255, 77, 141, 0.15);
+}
+
+/* Password modal fields */
+.pwd-field-group {
+  text-align: left;
+  margin-bottom: 14px;
+}
+
+.pwd-field-group label {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: #555;
+}
+
+.pwd-field-group input {
+  width: 100%;
+  padding: 13px 15px;
+  border: 1.5px solid rgba(255, 77, 141, 0.25);
+  border-radius: 14px;
+  background: #fff;
+  font-size: 14px;
+}
+
+.pwd-field-group input:focus {
+  border-color: #ff4d8d;
+  box-shadow: 0 0 0 3px rgba(255, 77, 141, 0.15);
+}
+
+.otp-msg {
+  min-height: 20px;
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.otp-msg.error { color: #c62828; }
+.otp-msg.ok { color: #2e7d32; }
+
+.otp-card .primary {
+  margin-top: 14px;
+  padding: 16px;
+}
+
+.otp-links {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 14px;
+  gap: 10px;
+}
+
+.link-btn {
+  padding: 8px 4px;
+  border: none;
+  background: none;
+  color: #ff4d8d;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.link-btn:disabled {
+  color: #aaa;
+  cursor: not-allowed;
+}
+
+/*----- Two-step indicator (only shown for an email change) -----*/
+.otp-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: #999;
+}
+
+.otp-steps[hidden] { display: none; }
+
+.otp-steps li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.otp-steps .dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #eee;
+  color: #777;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.otp-steps .bar {
+  width: 28px;
+  height: 3px;
+  border-radius: 3px;
+  background: #eee;
+}
+
+.otp-steps li.active { color: #ff4d8d; }
+.otp-steps li.active .dot { background: #ff4d8d; color: #fff; }
+.otp-steps li.done { color: #2e7d32; }
+.otp-steps li.done .dot { background: #2e7d32; color: #fff; }
+
+/*----- Toast (above the bottom bar) -----*/
+.pf-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 100px;
+  z-index: 10001;
+  max-width: 90%;
+  padding: 14px 22px;
+  border-radius: 30px;
+  background: #333;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 20px);
+  transition: 0.35s;
+}
+
+.pf-toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.pf-toast.error { background: #c62828; }
+.pf-toast.ok { background: #ff4d8d; }
+
+@media (max-width: 500px) {
+  .profile-edit-actions {
+    flex-direction: row;
+  }
+  .profile-edit-actions .primary {
     font-size: 14px;
-    z-index: 3;
-    pointer-events: none;
-    white-space: nowrap;
-    
-    /* The Traveling Light Gradient */
-    background: linear-gradient(
-        90deg, 
-        rgba(255, 77, 141, 0.3) 0%, 
-        rgba(255, 255, 255, 1) 50%, 
-        rgba(255, 77, 141, 0.3) 100%
-    );
-    background-size: 200% auto;
-    
-    /* Clip the background to the text shape */
-    color: transparent;
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    
-    /* Drop-shadow is used instead of text-shadow for background-clipped text */
-    filter: drop-shadow(0 0 8px rgba(255, 77, 141, 0.8));
-
-    /* Animate the light from left to right */
-    animation: shimmer 1.8s linear infinite;
-}
-
-/* 200% to -200% forces the gradient to move from left to right */
-@keyframes shimmer {
-    0% { background-position: 200% center; }
-    100% { background-position: -200% center; }
-}
-
-/*=====================================
-        BOTTOM STATUS TEXT 
-        (Standard Fade/Glow)
-=====================================*/
-.loader-status {
-    color: #ffb3d9;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    text-shadow: 0 0 10px rgba(255, 77, 141, 0.6);
-    animation: fade-text 1.2s infinite alternate;
-    margin-top: -20px; 
-    z-index: 2;
-}
-
-@keyframes fade-text {
-    0% { opacity: 0.5; text-shadow: 0 0 5px rgba(255, 77, 141, 0.4); }
-    100% { opacity: 1; text-shadow: 0 0 15px rgba(255, 77, 141, 1); }
+    padding: 14px 12px;
+  }
 }

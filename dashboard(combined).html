@@ -7,14 +7,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Dashboard | GiftBloom</title>
-
+<script src="loader.js"></script>
 <link rel="stylesheet" href="dashboard(combined).css">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
 </head>
 
 <body>
@@ -35,18 +34,6 @@
         }
     </script>
     <div class="hearts"></div>
-
-<!--==========================
-        CANVAS PAGE LOADER
-===========================-->
-<div id="pageLoader" class="page-loader">
-    <div class="loader-content">
-        <!-- Calligraphy Name inside the heart -->
-        <div id="loaderName" class="loader-name">Loading...</div>
-        <canvas id="loaderCanvas"></canvas>
-        <p class="loader-status">Blooming your gifts...</p>
-    </div>
-</div>
 
 <!--==========================
         NAVBAR
@@ -362,254 +349,111 @@ Recent Activity
 <section id="profile" class="page">
 <div class="glass profile-card">
 
-<h1>
-
-👤 My Profile
-
-</h1>
-
-<p class="subtitle">
-
-Manage your GiftBloom account.
-
-</p>
+<h1>👤 My Profile</h1>
+<p class="subtitle">Manage your GiftBloom account.</p>
 
 <!-- Basic Info -->
-
 <div class="user-info">
-
-<h2 id="profileUserName">
-
-Rahul Sharma
-
-</h2>
-
-<p id="userEmail">
-
-rahul@gmail.com
-
-</p>
-
-<p>
-
-Member Since
-
-<span id="joinDate">
-
-June 2026
-
-</span>
-
-</p>
-
+    <h2 id="profileUserName">Rahul Sharma</h2>
+    <p id="userEmail">rahul@gmail.com</p>
+    <p>
+        Member Since
+        <span id="joinDate">June 2026</span>
+    </p>
 </div>
 
 <!-- Statistics -->
-
 <div class="stats-grid">
-
-<div class="stat-box">
-
-<h3 id="campaignCount">
-
-3
-
-</h3>
-
-<p>
-
-Campaigns
-
-</p>
-
-</div>
-
-<div class="stat-box">
-
-<h3 id="raisedAmount">
-
-₹12,500
-
-</h3>
-
-<p>
-
-Raised
-
-</p>
-
-</div>
-
-<div class="stat-box">
-
-<h3 id="donorCount">
-
-148
-
-</h3>
-
-<p>
-
-Donors
-
-</p>
-
-</div>
-
-<div class="stat-box">
-
-<h3 id="donationCount">
-
-18
-
-</h3>
-
-<p>
-
-Donations
-
-</p>
-
-</div>
-
+    <div class="stat-box">
+        <h3 id="campaignCount">3</h3>
+        <p>Campaigns</p>
+    </div>
+    <div class="stat-box">
+        <h3 id="raisedAmount">₹12,500</h3>
+        <p>Raised</p>
+    </div>
+    <div class="stat-box">
+        <h3 id="donorCount">148</h3>
+        <p>Donors</p>
+    </div>
+    <div class="stat-box">
+        <h3 id="donationCount">18</h3>
+        <p>Donations</p>
+    </div>
 </div>
 
 <!-- Personal Details -->
+<h2 class="section-title">Personal Details</h2>
 
-<h2 class="section-title">
-
-Personal Details
-
-</h2>
-<label>User ID</label>
+<div class="field-label-row">
+    <label for="userId">User ID</label>
+    <span id="userIdLockTag" class="lock-tag" hidden>🔒 Can't be changed</span>
+</div>
 
 <div class="readonly-field">
-    <input
-        type="text"
-        id="userId"
-        readonly>
+    <input type="text" id="userId" readonly>
+    <button id="copyUserId" type="button">📋</button>
+</div>
 
-    <button id="copyUserId">
-        📋
+<label for="fullName">Full Name</label>
+<input type="text" id="fullName" disabled>
+
+<!-- Email label row with premium Verify Email pill on the right (shown ONLY when unverified) -->
+<div class="field-label-row">
+    <label for="email">Email</label>
+    <button type="button" id="verifyEmailBadge" class="verify-email-pill" hidden>
+        <span class="verify-pill-icon">✅</span> Verify Email
     </button>
 </div>
-<label>
+<input type="email" id="email" disabled>
 
-Full Name
+<label for="mobile">Mobile Number</label>
+<input type="tel" id="mobile" disabled>
 
-</label>
+<label for="dob">Date of Birth</label>
+<input type="date" id="dob" disabled>
 
-<input
-type="text"
-id="fullName">
-
-<label>
-
-Email
-
-</label>
-
-<input
-type="email"
-id="email">
-
-<label>
-
-Mobile Number
-
-</label>
-
-<input
-type="tel"
-id="mobile">
-
-<label>
-
-Date of Birth
-
-</label>
-
-<input
-type="date"
-id="dob">
-
-<label>
-
-Gender
-
-</label>
-
-<select id="gender">
-
-<option>Male</option>
-
-<option>Female</option>
-
-<option>Other</option>
-
-<option>Prefer not to say</option>
-
+<label for="gender">Gender</label>
+<select id="gender" disabled>
+    <option>Male</option>
+    <option>Female</option>
+    <option>Other</option>
+    <option>Prefer not to say</option>
 </select>
 
-<label>
+<label for="bio">Bio</label>
+<textarea id="bio" rows="4" placeholder="Tell everyone something about yourself..." disabled></textarea>
 
-Bio
-
-</label>
-
-<textarea
-id="bio"
-rows="4"
-placeholder="Tell everyone something about yourself...">
-
-</textarea>
-
-<!-- Account -->
-
-<h2 class="section-title">
-
-Account
-
-</h2>
-
-<div class="account-buttons">
-
-<button id="profileChangePassword">
-
-🔑 Change Password
-
-</button>
-
-<button id="verifyEmail">
-
-📧 Verify Email
-
-</button>
-
-<button id="verifyMobile">
-
-📱 Verify Mobile
-
-</button>
-
-<button id="profileLogout">
-
-🚪 Logout
-
-</button>
-
+<!-- Single Edit Profile + Dynamic Save Changes Row right after Bio -->
+<div class="profile-edit-actions" id="profileEditActions">
+    <button type="button" id="editProfileToggleBtn" class="primary edit-profile-btn">
+        ✏️ Edit Profile
+    </button>
+    <button type="button" id="saveProfile" class="primary save-profile-btn" hidden>
+        💾 Save Changes
+    </button>
 </div>
 
-<button
-id="saveProfile"
-class="primary">
+<!-- Account -->
+<h2 class="section-title">Account</h2>
 
-💾 Save Changes
+<div class="account-buttons">
+    <button type="button" id="profileChangePassword">
+        🔑 Change Password
+    </button>
 
-</button>
+    <button type="button" id="verifyMobile">
+        📱 Verify Mobile
+    </button>
+
+    <button type="button" id="profileLogout">
+        🚪 Logout
+    </button>
+</div>
 
 </div>
 </section>
+
 <section id="settings" class="page">
 <div class="glass settings-card">
 
@@ -1150,7 +994,6 @@ placeholder="Search Donation ID, Donor or Transaction ID">
         <span class="nav-text">Profile</span>
     </a>
 </nav>
-
 <script src="dashboard(combined).js"></script>
 
 </body>

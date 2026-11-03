@@ -1,12 +1,15 @@
 /*=====================================
       API & ROUTING CONFIGURATION
 =====================================*/
-const API_URL = "https://script.google.com/macros/s/AKfycbw1_v-AlR_pbcY7ixg6yudi3qW0yzeTXQJzKSL0keggjJIbPUzD4r9JXBmvYV4CL3yn/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyspj1ezHNVn6e0AFTDqhPNHJAnclSB9sbVCLeVOfRIla_RpWuBVJr7jViB1zm-RyD-/exec";
 
-// Put this on protected pages
-const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+// Check both localStorage (Remember Me) and sessionStorage (standard login)
+const isPersistentLogin = localStorage.getItem("isLoggedIn") === "true";
+const isSessionLogin = sessionStorage.getItem("isLoggedIn") === "true";
+const currentUserStr = localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser");
+const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
 
-if (!currentUser || (!currentUser.userId && !currentUser.id)) {
+if ((!isPersistentLogin && !isSessionLogin) || !currentUser || (!currentUser.userId && !currentUser.id)) {
     alert("You must be logged in to view this page.");
     window.location.href = "login.html";
 }
@@ -38,13 +41,16 @@ if (heartsContainer) {
 /*=====================================
         BACK BUTTON
 =====================================*/
-document.querySelector(".back-btn").onclick = () => {
-    if (campaignId) {
-        window.location.href = `campaigns.html?id=${campaignId}`;
-    } else {
-        history.back();
-    }
-};
+const backBtnEl = document.querySelector(".back-btn");
+if (backBtnEl) {
+    backBtnEl.onclick = () => {
+        if (campaignId) {
+            window.location.href = `campaigns.html?id=${campaignId}`;
+        } else {
+            history.back();
+        }
+    };
+}
 
 /*=====================================
         LOAD CAMPAIGN DETAILS
@@ -104,7 +110,6 @@ function renderCampaignDetails(data) {
     const goal = Number(data.targetAmount || data.target) || 1;
     const pct = Math.min(Math.round((raised / goal) * 100), 100);
 
-        // Change these from "raisedAmountText" and "targetAmountText"
     document.getElementById("raisedText").textContent = `₹${raised} Raised`;
     document.getElementById("goalText").textContent = `₹${goal} Goal`;
 
@@ -120,7 +125,6 @@ function renderCampaignDetails(data) {
 
     // NEW: Show Message box ONLY if campaign allows it
     const msgSection = document.getElementById("messageSection");
-    // Change "receiveMessages" below to whatever your column name is in Google Sheets
     if (data.receiveMessages === "Yes" || data.receiveMessages === "TRUE" || data.receiveMessages === true) {
         msgSection.style.display = "block";
     } else {
@@ -210,6 +214,7 @@ document.getElementById("submitDonation").onclick = async () => {
             message: message,
             anonymous: anonymous,
             status: "Pending",
+            token: currentUser?.token || "",
             timestamp: new Date().toISOString()
         }
     };

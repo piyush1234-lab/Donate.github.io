@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 
 <title>GiftBloom Admin</title>
-
+<script src="loader.js"></script>
 <link rel="stylesheet" href="admin.css">
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -216,33 +216,25 @@ Campaign reported
 
 </div>
 
-<!-- NEXT PARTS WILL COME HERE -->
-
 <section id="usersSection" class="glass section">
 
 <h2>👥 Users Management</h2>
 
+<div class="user-admin-tabs">
+    <button class="tab-btn active" data-tab="usersPanel">👤 Users</button>
+    <button class="tab-btn" data-tab="adminsPanel">🛡 Admins</button>
+</div>
+
+<!-- USERS TAB -->
+<div id="usersPanel" class="tab-panel active">
+
 <div class="toolbar">
-
-<input
-type="text"
-id="userSearch"
-placeholder="Search by Name, Email or User ID">
-
+<input type="text" id="userSearch" placeholder="Search by Name, Email or User ID">
 <select id="userFilter">
-
 <option value="all">All Users</option>
-
 <option value="active">Active</option>
-
 <option value="suspended">Suspended</option>
-
-<option value="verified">Verified</option>
-
-<option value="unverified">Unverified</option>
-
 </select>
-<!-- 1. Add this select dropdown INSIDE your existing <div class="toolbar"> -->
 <select id="userLimit">
     <option value="5">5 per page</option>
     <option value="10">10 per page</option>
@@ -250,8 +242,17 @@ placeholder="Search by Name, Email or User ID">
     <option value="50">50 per page</option>
     <option value="100">100 per page</option>
 </select>
+</div>
 
-<!-- 2. Add this pagination block right AFTER your <div class="table-wrapper"> closes -->
+<div class="table-wrapper">
+<table class="admin-table">
+<thead>
+<tr><th>User ID</th><th>Name</th><th>Email</th><th>Campaigns</th><th>Donations</th><th>Status</th><th>Actions</th></tr>
+</thead>
+<tbody id="userTable"></tbody>
+</table>
+</div>
+
 <div class="pagination">
     <button onclick="changePage('users', -1)">⬅ Prev</button>
     <span id="userPageInfo">Page 1 of 1</span>
@@ -260,98 +261,43 @@ placeholder="Search by Name, Email or User ID">
 
 </div>
 
-<div class="table-wrapper">
+<!-- ADMINS TAB -->
+<div id="adminsPanel" class="tab-panel">
 
-<table class="admin-table">
-
-<thead>
-
-<tr>
-
-<th>User ID</th>
-
-<th>Name</th>
-
-<th>Email</th>
-
-<th>Campaigns</th>
-
-<th>Donations</th>
-
-<th>Status</th>
-
-<th>Actions</th>
-
-</tr>
-
-</thead>
-
-<tbody id="userTable">
-
-<tr>
-
-<td>GBU100001</td>
-
-<td>Rahul Sharma</td>
-
-<td>rahul@gmail.com</td>
-
-<td>3</td>
-
-<td>12</td>
-
-<td>
-
-<span class="status active">
-
-Active
-
-</span>
-
-</td>
-
-<td>
-
-<div class="table-actions">
-
-<button class="viewUser">
-
-👁 View
-
-</button>
-
-<button class="emailUser">
-
-📧 Email
-
-</button>
-
-<button class="suspendUser">
-
-🚫 Suspend
-
-</button>
-
-<button class="deleteUser">
-
-🗑 Delete
-
-</button>
-
+<div class="toolbar">
+<input type="text" id="adminSearch" placeholder="Search by Name, Email or Admin ID">
+<select id="adminFilter">
+<option value="all">All</option>
+<option value="active">Active</option>
+<option value="suspended">Suspended</option>
+</select>
+<select id="adminLimit">
+    <option value="5">5 per page</option>
+    <option value="10">10 per page</option>
+    <option value="20">20 per page</option>
+    <option value="50">50 per page</option>
+    <option value="100">100 per page</option>
+</select>
 </div>
 
-</td>
-
-</tr>
-
-</tbody>
-
+<div class="table-wrapper">
+<table class="admin-table">
+<thead>
+<tr><th>Admin ID</th><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr>
+</thead>
+<tbody id="adminTable"></tbody>
 </table>
+</div>
+
+<div class="pagination">
+    <button onclick="changePage('admins', -1)">⬅ Prev</button>
+    <span id="adminPageInfo">Page 1 of 1</span>
+    <button onclick="changePage('admins', 1)">Next ➡</button>
+</div>
 
 </div>
 
 </section>
-
 <section id="campaignSection" class="glass section">
 
 <h2>❤️ Campaign Management</h2>
@@ -809,19 +755,14 @@ placeholder="Search by Transaction ID, Donation ID, Campaign ID, User ID">
 <h2>📧 Email Center</h2>
 
 <div class="toolbar">
-
+    
 <select id="emailReceiver">
-
 <option value="single">Single User</option>
-
 <option value="campaign">Campaign Owner</option>
-
 <option value="donor">Donor</option>
-
+<option value="admin">All Admins (PIN Change Notice)</option>
 <option value="all">All Users</option>
-
 </select>
-
 <input
 type="text"
 id="receiverId"
@@ -831,18 +772,10 @@ placeholder="Enter User ID / Campaign ID">
 <label>Email Template</label>
 
 <select id="emailTemplate">
-
 <option value="">Select Template</option>
-
-<option value="welcome">Welcome</option>
-
-<option value="verification">Donation Verified</option>
-
-<option value="rejected">Donation Rejected</option>
-
-<option value="campaign">Campaign Update</option>
-
+<option value="pinChanged">🔐 Secret PIN Changed</option>
 </select>
+
 <label>Email Subject</label>
 
 <input
@@ -1127,6 +1060,8 @@ data-target="adminPhone">
 
 <p><b>User ID:</b> <span id="popupUserId"></span></p>
 
+<p><b>Role:</b> <span id="popupRole"></span></p>
+
 <p><b>Name:</b> <span id="popupName"></span></p>
 
 <p><b>Email:</b> <span id="popupEmail"></span></p>
@@ -1398,6 +1333,73 @@ Cancel
 </div>
 
 </div>
+
+<div id="makeAdminPopup" class="popup hidden">
+
+<div class="popup-card glass">
+
+<button class="closeMakeAdminPopup">
+
+✖
+
+</button>
+
+<h2>🛡 Promote to Admin</h2>
+
+<p><b>User Email:</b> <span id="makeAdminEmail"></span></p>
+
+<label>Message Preview</label>
+
+<textarea id="makeAdminMessage" rows="8"></textarea>
+
+<div class="popup-buttons">
+
+<button id="confirmMakeAdmin">
+
+✅ Confirm & Send
+
+</button>
+
+<button class="closeMakeAdminPopup">
+
+Cancel
+
+</button>
+
+</div>
+
+</div>
+
+</div>
+<!-- ===========================
+  STRICT 1ST-LOGIN / ADMIN PASSWORD CHANGE POPUP
+=========================== -->
+<div id="forcePasswordPopup" class="popup hidden">
+    <div class="popup-card glass">
+        <button class="closeForcePasswordPopup hidden" id="closeForcePwdBtn">✖</button>
+
+        <h2 id="forcePwdTitle">🔐 Change Admin Password</h2>
+        <p id="forcePwdSubtitle" style="margin-bottom: 14px; color: #555; font-size: 14px;">
+            For security, new administrators must set a new Admin Dashboard password on their first login before continuing.
+        </p>
+
+        <label>Current Password</label>
+        <input type="password" id="currentAdminPwd" placeholder="Enter current password">
+
+        <label>New Admin Password</label>
+        <input type="password" id="newAdminPwd" placeholder="At least 6 characters">
+
+        <label>Confirm New Password</label>
+        <input type="password" id="confirmAdminPwd" placeholder="Re-enter new password">
+
+        <div class="popup-buttons" style="margin-top: 15px;">
+            <button id="submitAdminPwdChange" style="background: #ff4d8d; color: #fff;">
+                🔐 Update Password
+            </button>
+        </div>
+    </div>
+</div>
+
 </body>
 <script src="admin.js"></script>
 </html>

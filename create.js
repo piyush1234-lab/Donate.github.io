@@ -2,12 +2,15 @@
       GIFTBLOOM API CONNECTION
 =====================================*/
 // Keeping the API URL here for reference, but it will be used in the final publish page instead!
-const API_URL = "https://script.google.com/macros/s/AKfycbw1_v-AlR_pbcY7ixg6yudi3qW0yzeTXQJzKSL0keggjJIbPUzD4r9JXBmvYV4CL3yn/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyspj1ezHNVn6e0AFTDqhPNHJAnclSB9sbVCLeVOfRIla_RpWuBVJr7jViB1zm-RyD-/exec";
 
-// Put this on protected pages
-const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+// Check both localStorage (Remember Me) and sessionStorage (standard login)
+const isPersistentLogin = localStorage.getItem("isLoggedIn") === "true";
+const isSessionLogin = sessionStorage.getItem("isLoggedIn") === "true";
+const currentUserStr = localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser");
+const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
 
-if (!currentUser || (!currentUser.userId && !currentUser.id)) {
+if ((!isPersistentLogin && !isSessionLogin) || !currentUser || (!currentUser.userId && !currentUser.id)) {
     alert("You must be logged in to view this page.");
     window.location.href = "login.html";
 }
@@ -88,8 +91,6 @@ function syncStateToBackend(state) {
     }).catch(e => console.log("⚠️ Failed to sync state to backend:", e.message));
 }
 
-detectUserLocation(); // fire on page load, fully silent unless GeoJS fails
-
 /*=====================================
         MOBILE MENU
 =====================================*/
@@ -117,7 +118,7 @@ if(menuBtn && menu){
         DYNAMIC AUTH MENU
 =====================================*/
 function updateNavbar() {
-    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true" || sessionStorage.getItem("isLoggedIn") === "true";
     const menu = document.getElementById("menu");
 
     if (!menu) return;
@@ -154,9 +155,11 @@ function generateCampaignId() {
       EDIT MODE & DRAFT LOGIC
 =====================================*/
 let savedCampaign = null;
-const currentDraftUserId = currentUser.userId;
+const currentDraftUserId = (currentUser && (currentUser.userId || currentUser.id)) || "";
 const DRAFT_KEY = "draftData_" + currentDraftUserId;
 const DRAFT_TIME_KEY = "draftTime_" + currentDraftUserId;
+
+detectUserLocation(); // fire on page load, fully silent unless GeoJS fails
 
 document.addEventListener("DOMContentLoaded", () => {
     let editData = localStorage.getItem(DRAFT_KEY);
@@ -233,7 +236,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Blank slate
         if (idField) idField.value = generateCampaignId();
         if (ownerIdField) ownerIdField.value = currentDraftUserId;
-        if (document.getElementById("creator")) document.getElementById("creator").value = currentUser.name || "";
+        if (document.getElementById("creator")) document.getElementById("creator").value = (currentUser && currentUser.name) || "";
     }
 
     if(typeof validateCascade === "function") {
@@ -618,3 +621,122 @@ document.getElementById("nextBtn").addEventListener("click", () => {
     // Redirect to expenses immediately without waiting for database upload
     window.location.href = "expenses.html";
 });
+
+
+/* GiftBloom - gift image check v2 */
+(function () {
+  var BACKEND_URL = API_URL;
+
+  var nextBtnEl = document.getElementById('nextBtn');
+  var applyCropBtnEl = document.getElementById('applyCropBtn');
+  if (!nextBtnEl || !applyCropBtnEl || typeof giftPreview === 'undefined' || typeof giftInput === 'undefined') {
+    console.error('gift-image-check: expected page elements not found - skipping.');
+    return;
+  }
+
+  var approved = false;
+  var runId = 0;
+
+  var status = document.createElement('div');
+  status.setAttribute('role', 'status');
+  status.style.cssText = 'margin-top:6px;font-size:14px;';
+  giftPreview.after(status);
+
+  function setStatus(text, color) {
+    status.textContent = text;
+    status.style.color = color || '';
+  }
+
+  function lock() {
+    approved = false;
+    nextBtnEl.disabled = true;
+  }
+
+  function rejectMessage(category) {
+    if (!category || /^(unclear|unknown|none|other)$/.test(category)) {
+      return 'This image does not have a valid gift image. Please upload a clear photo of the gift.';
+    }
+    var article = /^[aeiou]/.test(category) ? 'an' : 'a';
+    return "You can't upload " + article + ' ' + category + ' image. Please upload an image of the gift.';
+  }
+
+  function rejectImage(message) {
+    lock();
+    setStatus('\u274C ' + message, '#c62828');
+    alert(message);
+    finalCroppedGift = '';
+    giftPreview.src = '';
+    giftPreview.style.display = 'none';
+    giftInput.value = '';
+    if (typeof validateCascade === 'function') validateCascade();
+  }
+
+  function shrinkDataUrlToBase64(dataUrl, maxSide) {
+    return new Promise(function (ok, fail) {
+      var img = new Image();
+      img.onload = function () {
+        var scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+        var canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        ok(canvas.toDataURL('image/jpeg', 0.65).split(',')[1]);
+      };
+      img.onerror = function () { fail(new Error('Could not read the cropped image.')); };
+      img.src = dataUrl;
+    });
+  }
+
+  function runGiftCheck(dataUrl) {
+    var myRun = ++runId;
+    lock();
+    setStatus('Checking image\u2026', '#666');
+
+    shrinkDataUrlToBase64(dataUrl, 512).then(function (image) {
+      return fetch(BACKEND_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'checkGiftImage',
+          image: image,
+          mime: 'image/jpeg',
+          data: { image: image, mime: 'image/jpeg' }
+        }),
+        signal: AbortSignal.timeout ? AbortSignal.timeout(45000) : undefined
+      });
+    }).then(function (res) {
+      return res.json();
+    }).then(function (data) {
+      if (myRun !== runId) return;
+      if (!data.ok) throw new Error(data.error || 'Check failed');
+
+      if (data.valid) {
+        approved = true;
+        nextBtnEl.disabled = false;
+        setStatus('\u2705 Gift image accepted' + (data.category ? ': ' + data.category : ''), '#2e7d32');
+      } else {
+        rejectImage(rejectMessage(data.category));
+      }
+    }).catch(function (err) {
+      if (myRun !== runId) return;
+      console.error('gift-image-check:', err);
+      rejectImage("Couldn't check this image. Please try again or choose another one.");
+    });
+  }
+
+  var originalApplyCrop = applyCropBtnEl.onclick;
+  applyCropBtnEl.onclick = function (e) {
+    var typeBeingApplied = currentCropType;
+    if (typeof originalApplyCrop === 'function') originalApplyCrop.call(this, e);
+    if (typeBeingApplied === 'gift' && finalCroppedGift) {
+      runGiftCheck(finalCroppedGift);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    if (finalCroppedGift) runGiftCheck(finalCroppedGift);
+  });
+
+  lock();
+  window.giftImageApproved = function () { return approved; };
+})();

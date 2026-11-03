@@ -1,189 +1,29 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbw1_v-AlR_pbcY7ixg6yudi3qW0yzeTXQJzKSL0keggjJIbPUzD4r9JXBmvYV4CL3yn/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyspj1ezHNVn6e0AFTDqhPNHJAnclSB9sbVCLeVOfRIla_RpWuBVJr7jViB1zm-RyD-/exec";
 
-// Put this on public pages (e.g., campaign.html)
-const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+// Check both localStorage (Remember Me) and sessionStorage (standard login)
+const isPersistentLogin = localStorage.getItem("isLoggedIn") === "true";
+const isSessionLogin = sessionStorage.getItem("isLoggedIn") === "true";
+const currentUserStr = localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser");
+const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
 
-const isLoggedIn = currentUser && (currentUser.userId || currentUser.id);
-
-if (isLoggedIn) {
-    // Show "Go to Dashboard" button in navbar
-} else {
-    // Show "Log In / Sign Up" button in navbar
-}
-
-
-/*=====================================
-      CANVAS PARTICLE HEART LOADER
-=====================================*/
-let loaderAnimId;
-
-function initLoaderCanvas() {
-    const loaderCanvas = document.getElementById('loaderCanvas');
-    if (!loaderCanvas) return;
-
-    // Cancel any existing animation to prevent double-speed glitch on resize
-    if (loaderAnimId) cancelAnimationFrame(loaderAnimId);
-
-    const ctx = loaderCanvas.getContext('2d');
-    const cw = loaderCanvas.width = 300;
-    const ch = loaderCanvas.height = 300;
-    const cx = cw / 2;
-    const cy = ch / 2 - 20;
-
-    const HEART_RES = 256;
-    const hpx = new Float32Array(HEART_RES);
-    const hpy = new Float32Array(HEART_RES);
-
-    // Generate mathematical heart boundaries
-    for (let i = 0; i < HEART_RES; i++) {
-        const t = (i / HEART_RES) * Math.PI * 2;
-        hpx[i] = 16 * Math.pow(Math.sin(t), 3);
-        hpy[i] = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-    }
-
-    const N = 350; 
-    const particles = [];
-    const colors = ['#ff4d8d', '#4740ff', '#ff1493', '#ff84b7', '#ffb3d9', '#ff40a8']; 
-
-    // Start particles from center
-    for (let i = 0; i < N; i++) {
-        particles.push({
-            x: cx, 
-            y: cy, 
-            vx: (Math.random() - 0.5) * 15, 
-            vy: (Math.random() - 0.5) * 15, 
-            size: Math.random() * 1.2 + 0.8,
-            targetIndex: (i * 7) % HEART_RES,
-            color: colors[Math.floor(Math.random() * colors.length)],
-            offsetT: Math.random() * Math.PI * 2
-        });
-    }
-
-    function animateLoader(time) {
-        ctx.globalCompositeOperation = 'destination-out';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
-        ctx.fillRect(0, 0, cw, ch);
-
-        ctx.globalCompositeOperation = 'lighter';
-
-        const cycle = (time * 0.0013) % 1;
-        let pulse = 0;
-        if (cycle < 0.12) pulse = Math.sin((cycle / 0.12) * Math.PI);
-        else if (cycle > 0.18 && cycle < 0.35) pulse = 0.5 * Math.sin(((cycle - 0.18) / 0.17) * Math.PI);
-        const hs = 2.25 * (1 + pulse * 0.15); 
-
-        const activeIndex = (time * 0.10) % HEART_RES; 
-
-        for (let i = 0; i < N; i++) {
-            let p = particles[i];
-            let tx = cx + hpx[p.targetIndex] * hs;
-            let ty = cy + hpy[p.targetIndex] * hs;
-
-            p.vx += (tx - p.x) * 0.08; 
-            p.vy += (ty - p.y) * 0.08;
-            
-            p.vx += Math.sin(time * 0.002 + p.offsetT) * 0.03;
-            p.vy += Math.cos(time * 0.002 + p.offsetT) * 0.03;
-
-            p.vx *= 0.75; 
-            p.vy *= 0.75;
-
-            p.x += p.vx;
-            p.y += p.vy;
-
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-
-            let diff = (activeIndex - p.targetIndex + HEART_RES) % HEART_RES;
-
-            if (diff < 25) {
-                const intensity = 1 - (diff / 25); 
-                ctx.fillStyle = '#ff4d8d'; 
-                ctx.shadowBlur = 15 * intensity; 
-                ctx.shadowColor = '#ff4d8d'; 
-                ctx.fill();
-                ctx.shadowBlur = 0; 
-            } else {
-                ctx.fillStyle = p.color;
-                ctx.fill();
-            }
-        }
-        loaderAnimId = requestAnimationFrame(animateLoader);
-    }
-    loaderAnimId = requestAnimationFrame(animateLoader);
-}
-
-// Start the canvas animation
-initLoaderCanvas();
-
-
-/*=====================================
-      DYNAMIC LOADER SYNC (REUSABLE)
-=====================================*/
-function showPageLoader(customText = "Loading...") {
-    const loader = document.getElementById("pageLoader");
-    const nameEl = document.getElementById("loaderName"); 
-    
-    if (loader) {
-        if (nameEl) {
-            // Safely check if currentUser exists and has a name
-            let localUser = null;
-            try {
-                localUser = JSON.parse(localStorage.getItem("currentUser"));
-            } catch(e) {}
-
-            if (localUser && localUser.name && localUser.name.trim() !== "") {
-                const firstName = localUser.name.trim().split(" ")[0];
-                nameEl.textContent = firstName;
-            } else {
-                nameEl.textContent = customText;
-            }
-        }
-        
-        loader.style.display = "flex";
-        setTimeout(() => {
-            loader.classList.remove("fade-out");
-        }, 10);
-    }
-}
-
-function hidePageLoader() {
-    const loader = document.getElementById("pageLoader");
-    if (loader) {
-        loader.classList.add("fade-out");
-        setTimeout(() => {
-            loader.style.display = "none";
-        }, 600); 
-    }
-}
-
-// Fixed Resize Event!
-window.addEventListener("resize", () => {
-    const loader = document.getElementById("pageLoader");
-    if (loader && loader.style.display !== "none") {
-        initLoaderCanvas();
-    }
-});
-
-// Immediately show loader when script initiates
-showPageLoader();
+const isLoggedIn = (isPersistentLogin || isSessionLogin) && currentUser && (currentUser.userId || currentUser.id);
 
 
 /* =================================================================
    SECTION 1: UPDATE THE NAVIGATION MENU (LOGIN VS DASHBOARD)
 ================================================================= */
 function updateNavbar() {
-    let loggedInStatus = localStorage.getItem("isLoggedIn");
+    let loggedInStatus = localStorage.getItem("isLoggedIn") === "true" || sessionStorage.getItem("isLoggedIn") === "true";
     let menuElement = document.getElementById("menu");
 
     if (menuElement === null) return; 
 
-    if (loggedInStatus === "true") {
+    if (loggedInStatus) {
         menuElement.innerHTML = `
             <li><a href="index.html">Home</a></li>
             <li><a href="allCampaigns.html">Campaigns</a></li>
             <li><a href="dashboard(combined).html">Dashboard</a></li>
-            <li><a class="signup" href="profile.html">Profile</a></li>
+            <li><a class="signup" href="dashboard(combined).html?target=profile">Profile</a></li>
         `;
     } else {
         menuElement.innerHTML = `
@@ -222,7 +62,7 @@ if (menuBtn !== null && menuNav !== null) {
 let urlParams = new URLSearchParams(window.location.search);
 let campaignId = urlParams.get('id'); 
 
-let isUserLoggedIn = localStorage.getItem("isLoggedIn");
+let isUserLoggedIn = (localStorage.getItem("isLoggedIn") === "true" || sessionStorage.getItem("isLoggedIn") === "true") ? "true" : "false";
 let currentCampaign = null;
 
 
@@ -233,16 +73,14 @@ async function loadCampaignData() {
         return;
     }
 
-    // 1. Show the loader immediately before contacting the backend
-    showPageLoader("Loading Campaign...");
-
     try {
-        // Fetch live data from Google Sheets
+        // Fetch live data from Google Sheets (loader.js intercepts this automatically)
         let response = await fetch(API_URL, {
             method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({ 
                 action: "getCampaignById", 
-                data: { campaignId: campaignId, token: currentUser?.token || ""  } 
+                data: { campaignId: campaignId, token: currentUser?.token || "" } 
             })
         });
 
@@ -267,9 +105,6 @@ async function loadCampaignData() {
     } catch (networkError) {
         console.error("Failed to fetch from DB:", networkError);
         alert("Could not connect to the database. Please check your internet connection.");
-    } finally {
-        // 2. Hide the loader ONLY when the backend finishes processing
-        hidePageLoader();
     }
 }
 
@@ -301,65 +136,65 @@ function renderCampaignPage() {
 
     // Track a unique view per browser session (skip if the owner is viewing their own campaign)
     const viewedKey = "viewed_" + campaignId;
-    const isOwnerViewing = currentUser && currentCampaign.ownerId === currentUser.userId;
+    const isOwnerViewing = currentUser && (currentCampaign.ownerId === currentUser.userId || currentCampaign.ownerId === currentUser.id);
     if (!sessionStorage.getItem(viewedKey) && !isOwnerViewing) {
         sessionStorage.setItem(viewedKey, "true");
         fetch(API_URL, {
             method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({ action: "incrementCampaignView", data: { campaignId: campaignId } })
         }).catch(() => {});
     }  
         
-        // ADMIN FIX 2: ADD "VERIFIED" BADGE NEXT TO TITLE
-let titleText = currentCampaign.gift || currentCampaign.giftName || "Gift Campaign";
+    // ADMIN FIX 2: ADD "VERIFIED" BADGE NEXT TO TITLE
+    let titleText = currentCampaign.gift || currentCampaign.giftName || "Gift Campaign";
 
-// Apply the same strict checking logic used in the Dashboard
-let isVerified = Boolean(currentCampaign.verified) && 
-                 String(currentCampaign.verified).toLowerCase() !== "false" && 
-                 String(currentCampaign.verified).trim() !== "";
+    let isVerified = Boolean(currentCampaign.verified) && 
+                     String(currentCampaign.verified).toLowerCase() !== "false" && 
+                     String(currentCampaign.verified).trim() !== "";
 
-if (currentCampaign.adminStatus === "Approved") {
-    isVerified = true;
-}
+    if (currentCampaign.adminStatus === "Approved") {
+        isVerified = true;
+    }
 
-document.getElementById("giftName").innerHTML = `
-    <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
-        <span>${titleText}</span>
-        ${isVerified ? `<span style="display:inline-flex;align-items:center;gap:4px;background:#e8f5e9;color:#2e7d32;font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;margin-left:8px;">✅ Admin Verified</span>` : ""}
-    </div>
-`;
-
-
-    document.getElementById("campaignStory").innerText = currentCampaign.story || "No story provided.";
-
+    document.getElementById("giftName").innerHTML = `
+        <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <span>${titleText}</span>
+            ${isVerified ? `<span style="display:inline-flex;align-items:center;gap:4px;background:#e8f5e9;color:#2e7d32;font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;margin-left:8px;">✅ Admin Verified</span>` : ""}
+        </div>
+    `;
 
     document.getElementById("campaignStory").innerText = currentCampaign.story || "No story provided.";
     document.querySelector(".receiver").innerText = "For " + (currentCampaign.receiver || "Someone special") + " ❤️";
     document.querySelector(".creator").innerText = "👤 By " + (currentCampaign.creator || "Anonymous");
     
-           // ✅ NEW CODE: Use the correct variables from Google Sheets!
+    // Google Drive Image URL formatting
     if (currentCampaign.giftImageUrl) {
         let safeImageUrl = currentCampaign.giftImageUrl;
         
-        // 🛠️ GOOGLE DRIVE IMAGE FIX: Convert 'uc?id=' to a web-safe thumbnail URL
-        if (safeImageUrl.includes("drive.google.com/uc?id=")) {
-            let fileId = safeImageUrl.split("id=")[1].split("&")[0]; // Extract the ID safely
-            safeImageUrl = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w1000";
+        if (safeImageUrl.includes("drive.google.com")) {
+            let fileId = "";
+            if (safeImageUrl.includes("/file/d/")) {
+                fileId = safeImageUrl.split("/file/d/")[1].split("/")[0];
+            } else if (safeImageUrl.includes("id=")) {
+                fileId = safeImageUrl.split("id=")[1].split("&")[0];
+            }
+            if (fileId) {
+                safeImageUrl = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w1000";
+            }
         }
         
         document.getElementById("giftImage").src = safeImageUrl;
     } else {
-        // Fallback image just in case a campaign has no image at all
         document.getElementById("giftImage").src = "images/teddy.jpg"; 
     }
 
-        let infoBoxes = document.querySelectorAll(".detail-box p");
+    let infoBoxes = document.querySelectorAll(".detail-box p");
     if (infoBoxes.length >= 4) {
         infoBoxes[0].innerText = currentCampaign.gift || "Unknown";
         infoBoxes[1].innerText = currentCampaign.occasion || "Special Occasion";
         infoBoxes[2].innerText = currentCampaign.category || "General";
         
-        // Convert ISO string to a readable date
         let formattedDate = "TBD";
         if (currentCampaign.targetDate) {
             let d = new Date(currentCampaign.targetDate);
@@ -371,13 +206,8 @@ document.getElementById("giftName").innerHTML = `
     }
 
     /* --- MATH FOR PROGRESS BAR & STATS --- */
-        /* --- MATH FOR PROGRESS BAR & STATS --- */
-    // ❌ OLD: let raisedAmount = Number(currentCampaign.raised) || 0;
-    // ❌ OLD: let targetAmount = Number(currentCampaign.target) || 0;
-    
-    // ✅ NEW:
-    let raisedAmount = Number(currentCampaign.raisedAmount) || 0;
-    let targetAmount = Number(currentCampaign.targetAmount) || 0;
+    let raisedAmount = Number(currentCampaign.raisedAmount ?? currentCampaign.raised) || 0;
+    let targetAmount = Number(currentCampaign.targetAmount ?? currentCampaign.target) || 0;
     
     let percentage = targetAmount > 0 ? (raisedAmount / targetAmount) * 100 : 0;
     if (percentage > 100) percentage = 100; 
@@ -389,21 +219,20 @@ document.getElementById("giftName").innerHTML = `
     }
     
     let progressInfo = document.querySelector(".progress-info");
-    if(progressInfo) {
+    if (progressInfo) {
         progressInfo.innerHTML = `
             <span>${Math.round(percentage)}% Funded</span>
             <span>₹${raisedAmount} / ₹${targetAmount}</span>
         `;
     }
 
-        let remainingAmount = targetAmount - raisedAmount;
+    let remainingAmount = targetAmount - raisedAmount;
     if (remainingAmount < 0) remainingAmount = 0; 
     
     let donorsCount = currentCampaign.donorsCount || 0;
 
-    // 👇 REPLACE YOUR DAYS LEFT LOGIC WITH THIS 👇
     let daysLeft = "--";
-    let isCampaignEnded = false; // <--- NEW VARIABLE DECLARED HERE
+    let isCampaignEnded = false;
     
     if (currentCampaign.targetDate) {
         let targetDate = new Date(currentCampaign.targetDate);
@@ -413,13 +242,12 @@ document.getElementById("giftName").innerHTML = `
         
         if (daysLeft < 0) {
             daysLeft = "Ended";
-            isCampaignEnded = true; // <--- SET TO TRUE IF TIME RAN OUT
+            isCampaignEnded = true;
         }
     }
-    // 👆 -------------------------------------- 👆
 
     let heroStats = document.querySelector(".hero-stats");
-    if(heroStats) {
+    if (heroStats) {
         heroStats.innerHTML = `
             <div><h3>${donorsCount}</h3><p>Donors</p></div>
             <div><h3>${daysLeft}</h3><p>Days Left</p></div>
@@ -429,7 +257,6 @@ document.getElementById("giftName").innerHTML = `
 
 
     /* --- 🛡️ HELPER: SAFELY PARSE ARRAYS FROM GOOGLE SHEETS --- */
-    // If the database sends a JSON string instead of an array, this fixes it!
     function getSafeArray(data) {
         if (Array.isArray(data)) return data;
         if (typeof data === 'string' && data.trim() !== '') {
@@ -437,7 +264,7 @@ document.getElementById("giftName").innerHTML = `
                 let parsed = JSON.parse(data);
                 return Array.isArray(parsed) ? parsed : [];
             } catch (e) {
-                return []; // Fails safely if string is not valid JSON
+                return [];
             }
         }
         return [];
@@ -495,6 +322,9 @@ document.getElementById("giftName").innerHTML = `
 
     /* --- DYNAMIC WISHES --- */
     let wishesList = getSafeArray(currentCampaign.wishes);
+    if (wishesList.length === 0 && donationsList.length > 0) {
+        wishesList = donationsList.filter(d => d.message && String(d.message).trim() !== "");
+    }
     let wishesSection = document.querySelector(".wishes .glass");
     
     if (wishesSection) {
@@ -526,7 +356,6 @@ document.getElementById("giftName").innerHTML = `
     }
 
     if (isOwner === true) {
-        // --- OWNER LOGIC: KEPT EXACTLY AS IT WAS ---
         if (heroButtonsArea) {
             heroButtonsArea.className = "owner-action-grid"; 
             heroButtonsArea.innerHTML = `
@@ -542,17 +371,19 @@ document.getElementById("giftName").innerHTML = `
                 window.location.href = "create.html";
             };
 
-            // ✅ NEW EXTEND DATE CALENDAR MODAL
+            document.getElementById("analyticsBtn").onclick = function() {
+                window.location.href = "dashboard(combined).html?target=analytics";
+            };
+
+            // ✅ EXTEND DATE CALENDAR MODAL
             document.getElementById("extendBtn").onclick = function() {
-                // 1. Format the current date for the calendar
                 let currentDateValue = "";
                 if (currentCampaign.targetDate) {
                     try {
                         currentDateValue = new Date(currentCampaign.targetDate).toISOString().split('T')[0];
-                    } catch(e) {}
+                    } catch (e) {}
                 }
 
-                // 2. Create the beautiful UI Modal
                 let modalHTML = `
                     <div id="extendModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; display:flex; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
                         <div class="glass section-card" style="background:white; padding:30px; text-align:center; max-width:90%; width:350px;">
@@ -569,15 +400,12 @@ document.getElementById("giftName").innerHTML = `
                     </div>
                 `;
                 
-                // Inject the modal into the page
                 document.body.insertAdjacentHTML('beforeend', modalHTML);
 
-                // 3. Handle Cancel Button
                 document.getElementById("cancelExtend").onclick = function() {
                     document.getElementById("extendModal").remove();
                 };
 
-                // 4. Handle Save Button
                 document.getElementById("confirmExtend").onclick = async function() {
                     let newDate = document.getElementById("newTargetDate").value;
                     if (newDate) {
@@ -585,12 +413,10 @@ document.getElementById("giftName").innerHTML = `
                         confirmBtn.innerText = "Saving...";
                         confirmBtn.disabled = true;
 
-                        // 1. Show loader during backend update
-                        showPageLoader("Updating Date...");
-
                         try {
                             let response = await fetch(API_URL, {
                                 method: "POST",
+                                headers: { "Content-Type": "text/plain;charset=utf-8" },
                                 body: JSON.stringify({ 
                                     action: "extendCampaignDate", 
                                     data: { 
@@ -618,35 +444,49 @@ document.getElementById("giftName").innerHTML = `
                             alert("Network error. Could not connect to the database.");
                             confirmBtn.innerText = "Save Date";
                             confirmBtn.disabled = false;
-                        } finally {
-                            // 2. Hide loader when update finishes
-                            hidePageLoader();
                         }
                     }
-                }; // <-- THIS closes confirmExtend
-            }; // <--- 🛠️ THE MISSING BRACKET! THIS closes extendBtn
+                };
+            };
             
-            // Note: I also removed the duplicate deleteBtn code you had here
-            document.getElementById("deleteBtn").onclick = function() {
-                if (confirm("⚠️ Delete this campaign permanently?")) {
-                    alert("🗑 Campaign Deleted.");
-                    window.location.href = "dashboard(combined).html"; 
+            document.getElementById("deleteBtn").onclick = async function() {
+                if (!confirm("⚠️ Delete this campaign permanently?")) return;
+                try {
+                    let response = await fetch(API_URL, {
+                        method: "POST",
+                        headers: { "Content-Type": "text/plain;charset=utf-8" },
+                        body: JSON.stringify({
+                            action: "deleteCampaign",
+                            data: {
+                                campaignId: currentCampaign.campaignId || campaignId,
+                                userId: currentUser.userId || currentUser.id,
+                                token: currentUser?.token || ""
+                            }
+                        })
+                    });
+                    let result = await response.json();
+                    if (result.status === "Success") {
+                        alert("🗑 Campaign Deleted.");
+                        window.location.href = "dashboard(combined).html";
+                    } else {
+                        alert("❌ Error: " + result.message);
+                    }
+                } catch (err) {
+                    alert("❌ Network error while deleting campaign.");
                 }
             };
         }
         
         let reportSection = document.getElementById("reportSection");
-        if(reportSection) reportSection.style.display = "none";
+        if (reportSection) reportSection.style.display = "none";
 
     } else {
-        // --- NEW LOGIC FOR GUESTS & REGULAR USERS ---
-        // Checks if the campaign is ended first
+        // --- GUESTS & REGULAR USERS ---
         if (typeof isCampaignEnded !== 'undefined' && isCampaignEnded === true) {
             if (heroButtonsArea) {
                 heroButtonsArea.innerHTML = `<div style="text-align: center; padding: 15px; background: #ffe6f0; border-radius: 12px; color: #ff4d8d; font-weight: bold; font-size: 16px;">⏳ This campaign has ended.</div>`;
             }
         } else {
-            // Campaign is still active, show normal buttons
             if (isUserLoggedIn !== "true") {
                 if (heroButtonsArea) {
                     heroButtonsArea.innerHTML = `<button class="donate-btn" id="donateBtn">🔐 Login to Donate</button>`;
@@ -682,7 +522,7 @@ document.getElementById("giftName").innerHTML = `
                 reportedList.push({
                     reportId: "REP-" + Date.now().toString().slice(-4), 
                     campaignId: currentCampaign.campaignId || campaignId,
-                    reportedBy: currentUser.userId,
+                    reportedBy: currentUser.userId || currentUser.id,
                     reason: reason,
                     status: "Pending",
                     date: new Date().toLocaleDateString()
@@ -731,15 +571,13 @@ document.getElementById("giftName").innerHTML = `
     let similarContainer = document.querySelector(".similar .campaigns");
 
     if (similarContainer !== null) {
-        // 1. Show a loading state first
         similarContainer.innerHTML = "<p style='text-align:center; width:100%; color:#666;'>Loading similar campaigns...</p>";
 
-        // 2. Async function to fetch and rank campaigns
         async function loadSimilarCampaigns() {
             try {
-                // Fetch all active campaigns from the database
                 let response = await fetch(API_URL, {
                     method: "POST",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
                     body: JSON.stringify({ action: "getAllCampaigns" }) 
                 });
                 
@@ -749,11 +587,9 @@ document.getElementById("giftName").innerHTML = `
                     let allDB_Campaigns = result.data || [];
                     let activeCampaignsToDisplay = [];
 
-                    // Extract keywords from the CURRENT campaign to compare against
                     let currentCategory = currentCampaign.category ? currentCampaign.category.toLowerCase() : "";
                     let currentOccasion = currentCampaign.occasion ? currentCampaign.occasion.toLowerCase() : "";
 
-                    // 3. Loop through all database campaigns and give them a "Match Score"
                     for (let i = 0; i < allDB_Campaigns.length; i++) {
                         let c = allDB_Campaigns[i];
                         let isStatusActive = (c.status === "Active" || c.status === undefined);
@@ -764,38 +600,40 @@ document.getElementById("giftName").innerHTML = `
                             let cCategory = c.category ? c.category.toLowerCase() : "";
                             let cOccasion = c.occasion ? c.occasion.toLowerCase() : "";
                             
-                            // Keyword Math: Award points for matching details!
                             if (cCategory !== "" && cCategory === currentCategory) matchScore += 2;
                             if (cOccasion !== "" && cOccasion === currentOccasion) matchScore += 1;
 
-                            c.matchScore = matchScore; // Save score to object
+                            c.matchScore = matchScore;
                             activeCampaignsToDisplay.push(c);
                         }
                     }
 
-                    // 4. Sort the array so the highest score (most similar) is at the top
                     activeCampaignsToDisplay.sort((a, b) => b.matchScore - a.matchScore);
 
-                    // 5. Take only the top 2 best matches
                     let topTwo = activeCampaignsToDisplay.slice(0, 2);
 
                     similarContainer.innerHTML = ""; 
 
-                    // 6. Render them to the screen
                     if (topTwo.length === 0) {
                         similarContainer.innerHTML = "<p style='text-align:center; width:100%; color:#666;'>No similar campaigns right now.</p>";
                     } else {
                         for (let j = 0; j < topTwo.length; j++) {
                             let simCampaign = topTwo[j];
                             
-                            // 🛠️ Apply the Google Drive Image Fix to the thumbnails too!
                             let simImage = simCampaign.giftImageUrl || simCampaign.image || "images/teddy.jpg";
-                            if (simImage.includes("drive.google.com/uc?id=")) {
-                                let fileId = simImage.split("id=")[1].split("&")[0];
-                                simImage = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w500";
+                            if (simImage.includes("drive.google.com")) {
+                                let fileId = "";
+                                if (simImage.includes("/file/d/")) {
+                                    fileId = simImage.split("/file/d/")[1].split("/")[0];
+                                } else if (simImage.includes("id=")) {
+                                    fileId = simImage.split("id=")[1].split("&")[0];
+                                }
+                                if (fileId) {
+                                    simImage = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w500";
+                                }
                             }
 
-                                                        similarContainer.innerHTML += `
+                            similarContainer.innerHTML += `
                             <div class="glass card">
                                 <div class="card-image"><img src="${simImage}" alt="Gift"></div>
                                 <div class="content">
@@ -809,7 +647,6 @@ document.getElementById("giftName").innerHTML = `
                                     </button>
                                 </div>
                             </div>`;
-;
                         }
                     }
                 } else {
@@ -821,11 +658,10 @@ document.getElementById("giftName").innerHTML = `
             }
         }
         
-        // Trigger the live fetch
         loadSimilarCampaigns();
     }
-    /*
-=================================================================
+
+    /* =================================================================
        SECTION 10: INSTA-STYLE 1-ON-1 DM LOGIC
     ================================================================= */
     let chatSection = document.getElementById("chatSection");
@@ -860,7 +696,7 @@ document.getElementById("giftName").innerHTML = `
             
             if (typeof currentCampaign.directMessages === 'string') {
                 try { currentCampaign.directMessages = JSON.parse(currentCampaign.directMessages); }
-                catch(e) { currentCampaign.directMessages = {}; }
+                catch (e) { currentCampaign.directMessages = {}; }
             }
 
             let activeChatUserId = null; 
@@ -1016,7 +852,6 @@ if (mainImage !== null) {
 let backBtn = document.querySelector(".back-btn");
 if (backBtn !== null) {
     backBtn.addEventListener("click", function() { 
-        // 150ms delay allows the CSS click animation to play before leaving the page
         setTimeout(function() {
             history.back(); 
         }, 150);
@@ -1041,14 +876,16 @@ if (cardsToReveal.length > 0) {
     });
 }
 
-for (let i = 0; i < 18; i++) {
-    let heart = document.createElement("div");
-    heart.className = "heart";
-    heart.innerHTML = "❤";
-    heart.style.left = Math.random() * 100 + "vw";
-    heart.style.fontSize = 12 + Math.random() * 18 + "px";
-    heart.style.animationDuration = 8 + Math.random() * 8 + "s";
-    heart.style.animationDelay = Math.random() * 6 + "s";
-    document.querySelector(".hearts").appendChild(heart);
+const heartsContainerEl = document.querySelector(".hearts");
+if (heartsContainerEl) {
+    for (let i = 0; i < 18; i++) {
+        let heart = document.createElement("div");
+        heart.className = "heart";
+        heart.innerHTML = "❤";
+        heart.style.left = Math.random() * 100 + "vw";
+        heart.style.fontSize = 12 + Math.random() * 18 + "px";
+        heart.style.animationDuration = 8 + Math.random() * 8 + "s";
+        heart.style.animationDelay = Math.random() * 6 + "s";
+        heartsContainerEl.appendChild(heart);
+    }
 }
-  

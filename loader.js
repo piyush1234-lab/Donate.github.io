@@ -1,129 +1,175 @@
 /*=====================================================================
   GIFTBLOOM GLOBAL LOADER (loader.js)
-  • Injects your exact canvas heart + shimmering calligraphy loader DOM & CSS
-  • Intercepts every fetch() call and tracks active request counts (zero flicker)
-  • Waits for HTML/CSS, all backend calls, AND dynamic campaign images to load
-  • Automatically shows on page load, navigation, page refresh, and backend talks
-  • Exposes window.showPageLoader() and window.hidePageLoader() globally
+  • On index.html: Hidden on 1st visit & chatbot open; ONLY shows on
+    manual browser refresh or when clicking the Trending "Try Again" button
+  • On all other pages: Mounts instantly at Frame 0 & tracks backend calls
+  • Ignores 3rd-party fetches (festival calendar, GeoIP) & chatbot askAI calls
 =====================================================================*/
 (function () {
     "use strict";
 
+    /* 1. DETECT PAGE & NAVIGATION TYPE */
+    const path = (window.location.pathname || "").toLowerCase();
+    const isIndexPage =
+        path === "/" ||
+        path.endsWith("/") ||
+        path.endsWith("/index.html") ||
+        path.endsWith("/index.htm");
+
+    function isManualPageReload() {
+        try {
+            const navEntries =
+                window.performance &&
+                performance.getEntriesByType &&
+                performance.getEntriesByType("navigation");
+            if (navEntries && navEntries.length > 0) {
+                return navEntries[0].type === "reload";
+            }
+            if (window.performance && performance.navigation) {
+                return performance.navigation.type === 1; // TYPE_RELOAD
+            }
+        } catch (e) {}
+        return false;
+    }
+
+    // On index.html, only allow the loader if the user manually refreshed the page
+    let indexLoaderAllowed = isIndexPage ? isManualPageReload() : true;
+
     let activeRequests = 0;
     let manualLocks = 0;
-    let isPageLoading = document.readyState !== "complete";
+    let isPageLoading = isIndexPage
+        ? indexLoaderAllowed && document.readyState !== "complete"
+        : document.readyState !== "complete";
     let hideTimeout = null;
     let loaderAnimId = null;
     let isAnimating = false;
     let startCanvasLoop = null;
 
-    /* 1. INJECT EXACT LOADER CSS */
-    const style = document.createElement("style");
-    style.id = "giftbloom-global-loader-style";
-    style.textContent = `
-        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Great+Vibes&family=Poppins:wght@400;600&display=swap');
+    /* 2. NON-BLOCKING FONT LOAD */
+    if (!document.getElementById("giftbloom-loader-font")) {
+        const fontLink = document.createElement("link");
+        fontLink.id = "giftbloom-loader-font";
+        fontLink.rel = "stylesheet";
+        fontLink.href =
+            "https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Great+Vibes&display=swap";
+        (document.head || document.documentElement).appendChild(fontLink);
+    }
 
-        .page-loader {
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 10, 25, 0.4); 
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            z-index: 999999; 
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            opacity: 1;
-            visibility: visible;
-            transition: opacity 0.6s ease, visibility 0.6s ease;
-            font-family: 'Poppins', sans-serif;
-            user-select: none;
-        }
-        .page-loader.fade-out {
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-        }
-        .loader-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            position: relative;
-        }
-        #loaderCanvas {
-            width: 300px;
-            height: 300px;
-            z-index: 1;
-            display: block;
-        }
-        .loader-name {
-            position: absolute;
-            top: 43%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-family: 'Great Vibes', 'Dancing Script', 'Brush Script MT', cursive;
-            font-size: 14px;
-            z-index: 3;
-            pointer-events: none;
-            white-space: nowrap;
-            background: linear-gradient(
-                90deg, 
-                rgba(255, 77, 141, 0.3) 0%, 
-                rgba(255, 255, 255, 1) 50%, 
-                rgba(255, 77, 141, 0.3) 100%
-            );
-            background-size: 200% auto;
-            color: transparent;
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 8px rgba(255, 77, 141, 0.8));
-            animation: shimmer 1.8s linear infinite;
-        }
-        @keyframes shimmer {
-            0% { background-position: 200% center; }
-            100% { background-position: -200% center; }
-        }
-        .loader-status {
-            color: #ffb3d9;
-            font-size: 12px;
-            font-weight: 600;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            text-shadow: 0 0 10px rgba(255, 77, 141, 0.6);
-            animation: fade-text 1.2s infinite alternate;
-            margin-top: -20px; 
-            z-index: 2;
-            text-align: center;
-        }
-        @keyframes fade-text {
-            0% { opacity: 0.5; text-shadow: 0 0 5px rgba(255, 77, 141, 0.4); }
-            100% { opacity: 1; text-shadow: 0 0 15px rgba(255, 77, 141, 1); }
-        }
-    `;
-    document.head.appendChild(style);
+    /* 3. INJECT EXACT LOADER CSS */
+    if (!document.getElementById("giftbloom-global-loader-style")) {
+        const style = document.createElement("style");
+        style.id = "giftbloom-global-loader-style";
+        style.textContent = `
+            .page-loader {
+                position: fixed;
+                inset: 0;
+                background: rgba(15, 10, 25, 0.45);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                z-index: 2147483647;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                opacity: 1;
+                visibility: visible;
+                transition: opacity 0.45s ease, visibility 0.45s ease;
+                font-family: 'Poppins', sans-serif;
+                user-select: none;
+            }
+            .page-loader.fade-out {
+                opacity: 0;
+                visibility: hidden;
+                pointer-events: none;
+            }
+            .loader-content {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                position: relative;
+            }
+            #loaderCanvas {
+                width: 300px;
+                height: 300px;
+                z-index: 1;
+                display: block;
+            }
+            .loader-name {
+                position: absolute;
+                top: 43%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                font-family: 'Great Vibes', 'Dancing Script', 'Brush Script MT', cursive;
+                font-size: 15px;
+                z-index: 3;
+                pointer-events: none;
+                white-space: nowrap;
+                background: linear-gradient(
+                    90deg,
+                    rgba(255, 77, 141, 0.3) 0%,
+                    rgba(255, 255, 255, 1) 50%,
+                    rgba(255, 77, 141, 0.3) 100%
+                );
+                background-size: 200% auto;
+                color: transparent;
+                -webkit-background-clip: text;
+                background-clip: text;
+                -webkit-text-fill-color: transparent;
+                filter: drop-shadow(0 0 8px rgba(255, 77, 141, 0.8));
+                animation: shimmer 1.8s linear infinite;
+            }
+            @keyframes shimmer {
+                0% { background-position: 200% center; }
+                100% { background-position: -200% center; }
+            }
+            .loader-status {
+                color: #ffb3d9;
+                font-size: 12px;
+                font-weight: 600;
+                letter-spacing: 3px;
+                text-transform: uppercase;
+                text-shadow: 0 0 10px rgba(255, 77, 141, 0.6);
+                animation: fade-text 1.2s infinite alternate;
+                margin-top: -20px;
+                z-index: 2;
+                text-align: center;
+            }
+            @keyframes fade-text {
+                0% { opacity: 0.5; text-shadow: 0 0 5px rgba(255, 77, 141, 0.4); }
+                100% { opacity: 1; text-shadow: 0 0 15px rgba(255, 77, 141, 1); }
+            }
+        `;
+        (document.head || document.documentElement).appendChild(style);
+    }
 
-    /* 2. GET LOGGED-IN USER OR ADMIN FIRST NAME */
+    /* 4. GET LOGGED-IN USER OR ADMIN FIRST NAME */
     function getLoggedInFirstName() {
         try {
-            const userStr = localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser");
+            const userStr =
+                localStorage.getItem("currentUser") ||
+                sessionStorage.getItem("currentUser");
             if (userStr) {
                 const u = JSON.parse(userStr);
-                if (u && u.name && u.name.trim()) return u.name.trim().split(" ")[0];
+                if (u && u.name && u.name.trim())
+                    return u.name.trim().split(" ")[0];
             }
-            const adminStr = localStorage.getItem("adminProfile") || sessionStorage.getItem("adminProfile");
+            const adminStr =
+                localStorage.getItem("adminProfile") ||
+                sessionStorage.getItem("adminProfile");
             if (adminStr) {
                 const a = JSON.parse(adminStr);
-                if (a && a.name && a.name.trim()) return a.name.trim().split(" ")[0];
+                if (a && a.name && a.name.trim())
+                    return a.name.trim().split(" ")[0];
             }
         } catch (e) {}
         return "";
     }
 
-    /* 3. ENSURE LOADER DOM EXISTS (WORKS WITH OR WITHOUT INLINE HTML) */
+    /* 5. ENSURE LOADER DOM EXISTS */
     function ensureLoaderDOM() {
         let loader = document.getElementById("pageLoader");
-        if (!loader && document.body) {
+        const mountTarget = document.body || document.documentElement;
+
+        if (!loader && mountTarget) {
             loader = document.createElement("div");
             loader.id = "pageLoader";
             loader.className = "page-loader";
@@ -134,13 +180,20 @@
                     <p id="loaderStatusText" class="loader-status">Blooming your gifts...</p>
                 </div>
             `;
+            mountTarget.prepend(loader);
+        } else if (
+            loader &&
+            document.body &&
+            loader.parentNode === document.documentElement
+        ) {
             document.body.prepend(loader);
         }
+
         initCanvasAnimation();
         return loader;
     }
 
-    /* 4. CANVAS PARTICLE HEART ANIMATION */
+    /* 6. CANVAS PARTICLE HEART ANIMATION */
     function initCanvasAnimation() {
         const loaderCanvas = document.getElementById("loaderCanvas");
         if (!loaderCanvas || loaderCanvas.dataset.initialized === "true") return;
@@ -159,21 +212,34 @@
         for (let i = 0; i < HEART_RES; i++) {
             const t = (i / HEART_RES) * Math.PI * 2;
             hpx[i] = 16 * Math.pow(Math.sin(t), 3);
-            hpy[i] = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+            hpy[i] = -(
+                13 * Math.cos(t) -
+                5 * Math.cos(2 * t) -
+                2 * Math.cos(3 * t) -
+                Math.cos(4 * t)
+            );
         }
 
         const N = 350;
         const particles = [];
-        const colors = ["#ff4d8d", "#4740ff", "#ff1493", "#ff84b7", "#ffb3d9", "#ff40a8"];
+        const colors = [
+            "#ff4d8d",
+            "#4740ff",
+            "#ff1493",
+            "#ff84b7",
+            "#ffb3d9",
+            "#ff40a8"
+        ];
 
         for (let i = 0; i < N; i++) {
+            const targetIdx = (i * 7) % HEART_RES;
             particles.push({
-                x: cx,
-                y: cy,
-                vx: (Math.random() - 0.5) * 15,
-                vy: (Math.random() - 0.5) * 15,
+                x: cx + hpx[targetIdx] * 1.6,
+                y: cy + hpy[targetIdx] * 1.6,
+                vx: (Math.random() - 0.5) * 6,
+                vy: (Math.random() - 0.5) * 6,
                 size: Math.random() * 1.2 + 0.8,
-                targetIndex: (i * 7) % HEART_RES,
+                targetIndex: targetIdx,
                 color: colors[Math.floor(Math.random() * colors.length)],
                 offsetT: Math.random() * Math.PI * 2
             });
@@ -191,9 +257,10 @@
             const cycle = (time * 0.0013) % 1;
             let pulse = 0;
             if (cycle < 0.12) pulse = Math.sin((cycle / 0.12) * Math.PI);
-            else if (cycle > 0.18 && cycle < 0.35) pulse = 0.5 * Math.sin(((cycle - 0.18) / 0.17) * Math.PI);
+            else if (cycle > 0.18 && cycle < 0.35)
+                pulse = 0.5 * Math.sin(((cycle - 0.18) / 0.17) * Math.PI);
             const hs = 2.25 * (1 + pulse * 0.15);
-            const activeIndex = (time * 0.10) % HEART_RES;
+            const activeIndex = (time * 0.1) % HEART_RES;
 
             for (let i = 0; i < N; i++) {
                 let p = particles[i];
@@ -238,10 +305,13 @@
         startCanvasLoop();
     }
 
-    /* 5. WAIT FOR DYNAMICALLY INJECTED CAMPAIGN IMAGES */
+    /* 7. WAIT FOR DYNAMICALLY INJECTED CAMPAIGN IMAGES */
     function waitForDynamicImages(callback) {
-        const imgs = Array.from(document.querySelectorAll(".campaign-card img, .image-box img, .card-image img"))
-            .filter(img => !img.complete);
+        const imgs = Array.from(
+            document.querySelectorAll(
+                ".campaign-card img, .image-box img, .card-image img"
+            )
+        ).filter((img) => !img.complete);
 
         if (imgs.length === 0) {
             callback();
@@ -260,46 +330,50 @@
             }
         }
 
-        imgs.forEach(img => {
+        imgs.forEach((img) => {
             img.addEventListener("load", checkDone, { once: true });
             img.addEventListener("error", checkDone, { once: true });
         });
 
-        // 3-second safety cap so a slow Google Drive thumbnail never traps the user
         setTimeout(() => {
             if (!settled) {
                 settled = true;
                 callback();
             }
-        }, 3000);
+        }, 2500);
     }
 
-    /* 6. VISIBILITY CONTROLLER */
-    function renderLoaderVisible(customText = "Loading...", statusSubtext = "Blooming your gifts...") {
-        if (!document.body) return;
+    /* 8. VISIBILITY CONTROLLER */
+    function renderLoaderVisible(
+        customText = "Loading...",
+        statusSubtext = "Blooming your gifts..."
+    ) {
         const loader = ensureLoaderDOM();
         if (!loader) return;
 
         clearTimeout(hideTimeout);
 
-        const nameEl = document.getElementById("loaderName") || loader.querySelector(".loader-name");
-        const statusEl = document.getElementById("loaderStatusText") || loader.querySelector(".loader-status");
+        const nameEl =
+            document.getElementById("loaderName") ||
+            loader.querySelector(".loader-name");
+        const statusEl =
+            document.getElementById("loaderStatusText") ||
+            loader.querySelector(".loader-status");
         const firstName = getLoggedInFirstName();
 
         if (nameEl) {
-            nameEl.textContent = firstName ? firstName : (customText || "Loading...");
+            nameEl.textContent = firstName
+                ? firstName
+                : customText || "Loading...";
         }
         if (statusEl) {
             statusEl.textContent = statusSubtext || "Blooming your gifts...";
         }
 
-        document.body.style.cursor = "wait";
+        if (document.body) document.body.style.cursor = "wait";
         loader.style.display = "flex";
+        loader.classList.remove("fade-out");
         if (startCanvasLoop) startCanvasLoop();
-
-        requestAnimationFrame(() => {
-            loader.classList.remove("fade-out");
-        });
     }
 
     function tryHideLoader() {
@@ -310,27 +384,41 @@
             if (isPageLoading || activeRequests > 0 || manualLocks > 0) return;
 
             waitForDynamicImages(() => {
-                if (isPageLoading || activeRequests > 0 || manualLocks > 0) return;
+                if (isPageLoading || activeRequests > 0 || manualLocks > 0)
+                    return;
                 const loader = document.getElementById("pageLoader");
                 if (document.body) document.body.style.cursor = "default";
                 if (loader) {
                     loader.classList.add("fade-out");
                     setTimeout(() => {
-                        if (activeRequests === 0 && manualLocks === 0 && !isPageLoading) {
+                        if (
+                            activeRequests === 0 &&
+                            manualLocks === 0 &&
+                            !isPageLoading
+                        ) {
                             loader.style.display = "none";
                             isAnimating = false;
-                            if (loaderAnimId) cancelAnimationFrame(loaderAnimId);
+                            if (loaderAnimId)
+                                cancelAnimationFrame(loaderAnimId);
+                            // Lock index.html loader again after manual refresh/retry finishes
+                            if (isIndexPage) indexLoaderAllowed = false;
                         }
-                    }, 600);
+                    }, 450);
+                } else if (isIndexPage) {
+                    indexLoaderAllowed = false;
                 }
             });
-        }, 120);
+        }, 100);
     }
 
-    /* 7. GLOBAL WINDOW FUNCTIONS (BACKWARD COMPATIBLE) */
+    /* 9. GLOBAL WINDOW FUNCTIONS */
     window.showPageLoader = function (customText = "Loading...") {
         manualLocks++;
-        renderLoaderVisible(customText, customText === "Loading..." ? "Blooming your gifts..." : customText);
+        if (isIndexPage) indexLoaderAllowed = true;
+        renderLoaderVisible(
+            customText,
+            customText === "Loading..." ? "Blooming your gifts..." : customText
+        );
     };
 
     window.hidePageLoader = function () {
@@ -338,7 +426,7 @@
         tryHideLoader();
     };
 
-    /* 8. AUTOMATIC FETCH INTERCEPTOR (CATCHES EVERY BACKEND TALK) */
+    /* 10. AUTOMATIC FETCH INTERCEPTOR (ONLY GOOGLE APPS SCRIPT BACKEND) */
     const ACTION_STATUS_MAP = {
         loginUser: "Logging you in...",
         loginAdmin: "Verifying Admin access...",
@@ -393,6 +481,17 @@
 
     const nativeFetch = window.fetch.bind(window);
     window.fetch = async function (...args) {
+        const reqUrl =
+            typeof args[0] === "string"
+                ? args[0]
+                : (args[0] && args[0].url) || "";
+
+        // Never show loader for 3rd-party APIs (Chatbot festival calendar, GeoJS, BigDataCloud)
+        if (!reqUrl.includes("script.google.com")) {
+            return nativeFetch(...args);
+        }
+
+        let actionName = "";
         let customCenter = "Loading...";
         let statusText = "Blooming your gifts...";
         try {
@@ -400,21 +499,27 @@
             if (options && typeof options.body === "string") {
                 const parsed = JSON.parse(options.body);
                 if (parsed && parsed.action) {
-                    // Silent background actions that shouldn't block the screen
+                    actionName = parsed.action;
+                    // Never show loader for background view pings, OTP cancel, or Chatbot AI replies
                     if (
-                        parsed.action === "incrementCampaignView" ||
-                        parsed.action === "cancelProfileChange" ||
-                        parsed.action === "askAI"
+                        actionName === "incrementCampaignView" ||
+                        actionName === "cancelProfileChange" ||
+                        actionName === "askAI"
                     ) {
                         return nativeFetch(...args);
                     }
-                    if (ACTION_STATUS_MAP[parsed.action]) {
-                        customCenter = ACTION_STATUS_MAP[parsed.action];
-                        statusText = ACTION_STATUS_MAP[parsed.action];
+                    if (ACTION_STATUS_MAP[actionName]) {
+                        customCenter = ACTION_STATUS_MAP[actionName];
+                        statusText = ACTION_STATUS_MAP[actionName];
                     }
                 }
             }
         } catch (e) {}
+
+        // On index.html, skip the loader unless it's a manual browser refresh or "Try Again" click
+        if (isIndexPage && !indexLoaderAllowed && manualLocks === 0) {
+            return nativeFetch(...args);
+        }
 
         activeRequests++;
         renderLoaderVisible(customCenter, statusText);
@@ -427,22 +532,35 @@
         }
     };
 
-    /* 9. PAGE LOAD & NAVIGATION EVENTS */
-    if (document.body) {
+    /* 11. ALLOW LOADER ON INDEX.HTML WHEN "TRY AGAIN" (#reloadIcon / .reload-btn) IS CLICKED */
+    document.addEventListener(
+        "click",
+        (e) => {
+            const retryBtn = e.target.closest("#reloadIcon, .reload-btn");
+            if (retryBtn) {
+                indexLoaderAllowed = true;
+                renderLoaderVisible("Loading campaigns...", "Loading campaigns...");
+            }
+        },
+        true
+    );
+
+    /* 12. INITIAL STARTUP & NAVIGATION EVENTS */
+    if (!isIndexPage || indexLoaderAllowed) {
         renderLoaderVisible("Loading...", "Blooming your gifts...");
-    } else {
-        document.addEventListener("DOMContentLoaded", () => {
-            renderLoaderVisible("Loading...", "Blooming your gifts...");
-        });
     }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        if (!isIndexPage || indexLoaderAllowed) {
+            ensureLoaderDOM();
+        }
+    });
 
     window.addEventListener("load", () => {
         isPageLoading = false;
-        setTimeout(tryHideLoader, 180);
-    });
-
-    window.addEventListener("beforeunload", () => {
-        renderLoaderVisible("Loading...", "Blooming your gifts...");
+        if (!isIndexPage || indexLoaderAllowed) {
+            setTimeout(tryHideLoader, 150);
+        }
     });
 
     window.addEventListener("pageshow", (event) => {
